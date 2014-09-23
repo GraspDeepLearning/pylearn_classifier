@@ -225,11 +225,11 @@ class MakeC01B(preprocessing.Preprocessor):
             print data_label
             num_images = dataset[data_label].shape[0]
 
-            dataset.create_dataset("c01b_" + data_label, (4, 72, 72, num_images), chunks=(4, 72, 72, 100))
+            dataset.create_dataset("c01b_" + data_label, (4, 72, 72, num_images), chunks=(4, 72, 72, 88))
             dataset["c01b_" + y_label] = dataset[y_label]
 
             for i in range(num_images):
-                if i % (num_images/100) == 0:
+                if i % (num_images/100.0) == 0:
                     print "converting to co1b: " + str(i) + "/" + str(num_images)
 
                     b01c_data = np.copy(dataset[data_label][i])
