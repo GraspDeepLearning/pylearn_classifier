@@ -37,8 +37,8 @@ def preprocess_grasp_dataset(attribs):
     pipeline.items.append(hdf5_data_preprocessors.MakeC01B())
 
     #now lets actually make a new dataset and run it through the pipeline
-    if not os.path.exists(PYLEARN_DATA_PATH + "grasp_data/coke_can"):
-        os.makedirs(PYLEARN_DATA_PATH + "grasp_data/coke_can")
+    if not os.path.exists(PYLEARN_DATA_PATH + "grasp_data"):
+        os.makedirs(PYLEARN_DATA_PATH + "grasp_data")
 
     hd5f_dataset = h5py.File(attribs["output_filepath"])
     pipeline.apply(hd5f_dataset)
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     preprocess_attribs = dict(sets=("train", "test", "valid"),
                               num_patches_per_set=(100000, 10000, 10000),
                               patch_shape=(72, 72),
-                              raw_filepath=PYLEARN_DATA_PATH + "rgbd_images/coke_can/rgbd_and_labels.h5",
-                              output_filepath=PYLEARN_DATA_PATH + "grasp_data/coke_can/rgbd_preprocessed_72x72.h5")
+                              raw_filepath=PYLEARN_DATA_PATH + "rgbd_images/",
+                              output_filepath=PYLEARN_DATA_PATH + "grasp_data/rgbd_preprocessed_72x72.h5")
 
     preprocess_grasp_dataset(preprocess_attribs)
