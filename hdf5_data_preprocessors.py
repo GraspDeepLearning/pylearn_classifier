@@ -1,6 +1,7 @@
 
 import h5py
 import numpy as np
+import os
 
 from pylearn2.datasets import preprocessing
 from pylearn2.expr.preprocessing import global_contrast_normalize
@@ -19,10 +20,25 @@ class ExtractRawGraspData(preprocessing.Preprocessor):
             print "skipping extract_raw_data, this has already been run"
             return
 
-        old_dataset = h5py.File(self.raw_data_folder)
+        dataset.create_dataset(self.data_labels[0], (0, 480, 640, 4), chunks=(100, 480, 640, 4), maxshape=(None, 480, 640, 4))
+        dataset.create_dataset(self.data_labels[1], (0, 480, 640), chunks=(100, 480, 640), maxshape=(None, 480, 640))
 
-        for label in self.data_labels:
-            dataset[label] = old_dataset[label][:]
+        current_total = 0
+        for subdirectory in os.walk(self.raw_data_folder).next()[1]:
+
+            print subdirectory
+
+            old_dataset = h5py.File(self.raw_data_folder + subdirectory + '/rgbd_and_labels.h5')
+            number_to_add = old_dataset['rgbd'].shape[0]
+
+            for label in self.data_labels:
+                new_size = list(dataset[label].shape)
+                new_size[0] += number_to_add
+                new_size = tuple(new_size)
+                dataset[label].resize(new_size)
+                dataset[label][current_total: current_total+number_to_add] = old_dataset[label][:]
+
+            current_total += number_to_add
 
 
 class ExtractGraspPatches(preprocessing.Preprocessor):
@@ -44,8 +60,6 @@ class ExtractGraspPatches(preprocessing.Preprocessor):
             print "skipping extract_patches, this has already been run"
             return
 
-        #just rows and columns
-        num_topological_dimensions = 2
         dataset.create_dataset(self.patch_labels[0], (self.num_patches, self.patch_shape[0], self.patch_shape[1], 4), chunks=(100, self.patch_shape[0], self.patch_shape[1], 4))
         dataset.create_dataset(self.patch_labels[1], (self.num_patches, 1))
 
@@ -63,8 +77,9 @@ class ExtractGraspPatches(preprocessing.Preprocessor):
         rng = preprocessing.make_np_rng([1, 2, 3], which_method="randint")
 
         i = 0
+        iteration_count = 0
         while i < self.num_patches:
-            if i % (self.num_patches/10) == 0:
+            if iteration_count % 1000 == 0:
                 print "extracting patches: " + str(i) + "/" + str(self.num_patches)
 
             image_num = rng.randint(num_images)
@@ -87,14 +102,13 @@ class ExtractGraspPatches(preprocessing.Preprocessor):
                             patch_X[i] = X[tuple(x_args)]
                             patch_y[i] = y[tuple(y_args)]
 
-                            print i
-
                             x_args = [image_num]
                             y_args = [image_num]
                             i += 1
 
                             if i == self.num_patches:
                                 return
+            iteration_count += 1
 
 
 class PerChannelGlobalContrastNormalizePatches(preprocessing.Preprocessor):
