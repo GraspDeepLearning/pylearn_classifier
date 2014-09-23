@@ -9,7 +9,7 @@ def get_grasp_72_72_model():
     save_path = os.path.dirname(os.path.realpath(__file__)) + "/models/grasp_72x72_model"
 
     yaml = open("{0}/model.yaml".format(yaml_path), 'r').read()
-    hyper_params = {'batch_size': 25,
+    hyper_params = {'batch_size': 1,
                     'output_channels_h0': 32,
                     'output_channels_h1': 64,
                     'output_channels_h2': 64,
