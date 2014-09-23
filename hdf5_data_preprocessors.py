@@ -1,6 +1,7 @@
 
 import h5py
 import numpy as np
+import math
 
 from pylearn2.datasets import preprocessing
 from pylearn2.expr.preprocessing import global_contrast_normalize
@@ -23,6 +24,46 @@ class ExtractRawGraspData(preprocessing.Preprocessor):
 
         for label in self.data_labels:
             dataset[label] = old_dataset[label][:]
+
+
+class SplitGraspPatches(preprocessing.Preprocessor):
+
+    def __init__(self,
+                 source_dataset_filepath,
+                 output_keys=(("train_patches", "train_patch_labels"), ("valid_patches", "valid_patch_labels"), ("test_patches", "test_patch_labels")),
+                 output_weights = (.8, .1, .1),
+                 source_keys=("rgbd_patches", "rgbd_patch_labels")):
+
+        self.source_dataset = h5py.File(source_dataset_filepath)
+        self.output_keys = output_keys
+        #normalize the output weights
+        self.output_weights = [x/sum(output_weights) for x in output_weights]
+        self.source_keys = source_keys
+
+    def apply(self, dataset, can_fit=False):
+        #check if we have already extracted patches for this set of patch_labels
+        if self.output_keys[0][0] in dataset.keys():
+            print "skipping split_patches, this has already been run"
+            return
+
+        for index in range(len(self.output_keys)):
+            output_key_pair = self.output_keys[index]
+            patch_key = output_key_pair[0]
+            label_key = output_key_pair[1]
+
+            num_patches = math.floor(self.output_weights[index] * self.source_dataset[self.source_keys[0]].shape[0])
+            patch_shape = self.source_dataset[self.source_keys[0]].shape[1:4]
+
+            #dataset.create_dataset(patch_key, (num_patches, patch_shape[0], patch_shape[1], patch_shape[2]), chunks=(100, patch_shape[0], patch_shape[1], patch_shape[2]))
+            #dataset.create_dataset(label_key, (num_patches, 1))
+
+            start_range = math.floor(sum(self.output_weights[:index])*self.source_dataset[self.source_keys[0]].shape[0])
+
+            dataset[patch_key] = self.source_dataset[self.source_keys[0]][int(start_range):int(start_range+num_patches)]
+            dataset[label_key] = self.source_dataset[self.source_keys[1]][int(start_range):int(start_range+num_patches)]
+
+
+
 
 
 class ExtractGraspPatches(preprocessing.Preprocessor):
@@ -95,7 +136,6 @@ class ExtractGraspPatches(preprocessing.Preprocessor):
 
                             if i == self.num_patches:
                                 return
-
 
 class PerChannelGlobalContrastNormalizePatches(preprocessing.Preprocessor):
 
