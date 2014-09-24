@@ -8,7 +8,7 @@ import collections
 import pylab
 from scipy.signal import argrelextrema
 import scipy.misc
-
+import time
 
 import pylearn2
 import matplotlib.pyplot as plt
@@ -95,14 +95,17 @@ def get_scaled_image(img, scale=(34,44)):
 # f = theano.function([X], Y)
 feature_extractor = get_feature_extractor()
 img = np.zeros((4,240,320,1),dtype=np.float32)
-dataset = h5py.File('/home/jvarley/grasp_deep_learning/data/rgbd_images/coke_can/rgbd_and_labels.h5')
-img_in = dataset['rgbd'][0,240-120:240+120,320-160:320+160,:]
-img[:, :, :, 0] = np.rollaxis(img_in, 2, 0)
+#dataset = h5py.File('/home/jvarley/grasp_deep_learning/data/rgbd_images/coke_can/rgbd_and_labels.h5')
+#img_in = dataset['rgbd'][0,240-120:240+120,320-160:320+160,:]
 
 
-out = feature_extractor(img)
-out_rolled = np.rollaxis(out,1,4)
-out_window = out_rolled[0,:,:,:]
+dataset = h5py.File('/home/jvarley/grasp_deep_learning/data/rgbd_images/saxena_partial_rgbd_and_labels.h5')
+
+
+plt.imshow(dataset['rgbd_data'][0, :,:,0:3])
+plt.show()
+
+img_in = dataset['rgbd_data'][0,320-120:320+120,320-160:320+160,:]
 
 f = open(CONV_MODEL_FILENAME)
 cnn_model = cPickle.load(f)
@@ -112,7 +115,21 @@ cnn_model = cnn_model.layers[-1]
 W = cnn_model.get_weights_topo()
 W = W[0, 0, :, :]
 
+start = time.time()
+img[:, :, :, 0] = np.rollaxis(img_in, 2, 0)
+print time.time()-start
+
+start = time.time()
+out = feature_extractor(img)
+print time.time()-start
+
+start = time.time()
+out_rolled = np.rollaxis(out,1,4)
+out_window = out_rolled[0,:,:,:]
 output = np.dot(out_window,W) + cnn_model.b.get_value()
+print time.time()-start
+
+#print time.time()-start
 
 #currently output.min() is < 0 and output.max() > 0
 #normalized between 0 and 255
@@ -121,6 +138,11 @@ output = 255 - (output-output.min())/(output.max()-output.min())*255.0
 #crop output since padding messes up the borders
 border_dim = 5
 output = output[border_dim:-border_dim, border_dim:-border_dim]
+
+
+#print time.time()-start
+
+outdir = "/home/jvarley/grasp_deep_learning/data/final_output/"
 
 
 print "plot output"
@@ -139,12 +161,16 @@ for i in range(output.shape[0]):
         count += 1
 
 ax.scatter(x, y, z)
-plt.show()
+#plt.show()
+plt.savefig(outdir + "abc1.png")
 
+plt.close()
 
 print "input: "
 plt.imshow(img_in)
 plt.show()
+scipy.misc.imsave(outdir + "zyx.png", img_in[:,:,0:3])
+
 
 print "output.shape: " + str(output.shape)
 plt.imshow(output[:, :, 0])
