@@ -36,7 +36,7 @@ def run_72X72():
 def get_feature_extractor():
     f = open(CONV_MODEL_FILENAME)
     cnn_model = cPickle.load(f)
-    new_space = pylearn2.space.Conv2DSpace((240, 320), num_channels=4, axes=('c', 0, 1, 'b'), dtype='float32')
+    new_space = pylearn2.space.Conv2DSpace((480, 640), num_channels=4, axes=('c', 0, 1, 'b'), dtype='float32')
 
     cnn_model.layers = cnn_model.layers[0:-1]
 
@@ -94,7 +94,8 @@ def get_scaled_image(img, scale=(34,44)):
 #
 # f = theano.function([X], Y)
 feature_extractor = get_feature_extractor()
-img = np.zeros((4,240,320,1),dtype=np.float32)
+#img = np.zeros((4,240,320,1),dtype=np.float32)
+img = np.zeros((4,480,640,1),dtype=np.float32)
 #dataset = h5py.File('/home/jvarley/grasp_deep_learning/data/rgbd_images/coke_can/rgbd_and_labels.h5')
 #img_in = dataset['rgbd'][0,240-120:240+120,320-160:320+160,:]
 
@@ -105,7 +106,8 @@ dataset = h5py.File('/home/jvarley/grasp_deep_learning/data/rgbd_images/saxena_p
 plt.imshow(dataset['rgbd_data'][0, :,:,0:3])
 plt.show()
 
-img_in = dataset['rgbd_data'][0,320-120:320+120,320-160:320+160,:]
+#img_in = dataset['rgbd_data'][0,320-120:320+120,320-160:320+160,:]
+img_in = dataset['rgbd_data'][0,:,:,:]
 
 f = open(CONV_MODEL_FILENAME)
 cnn_model = cPickle.load(f)
@@ -161,10 +163,27 @@ for i in range(output.shape[0]):
         count += 1
 
 ax.scatter(x, y, z)
-#plt.show()
+plt.show()
+plt.clf()
+
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+
+x = np.zeros(output.shape[0]*output.shape[1])
+y = np.zeros(output.shape[0]*output.shape[1])
+z = np.zeros(output.shape[0]*output.shape[1])
+count = 0
+for i in range(output.shape[0]):
+    for j in range(output.shape[1]):
+        x[count] = i
+        y[count] = j
+        z[count] = output[i, j, 0]
+        count += 1
+
+ax.scatter(x, y, z)
 plt.savefig(outdir + "abc1.png")
 
-plt.close()
+
 
 print "input: "
 plt.imshow(img_in)
