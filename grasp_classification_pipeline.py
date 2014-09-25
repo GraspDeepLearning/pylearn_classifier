@@ -29,12 +29,16 @@ class Classification():
 
 class FeatureExtraction():
 
-    def __init__(self, model_filepath):
+    def __init__(self, model_filepath, useFloat64=False):
 
         f = open(model_filepath)
         cnn_model = cPickle.load(f)
+        self.useFloat64 = useFloat64;
 
-        new_space = pylearn2.space.Conv2DSpace((480, 640), num_channels=4, axes=('c', 0, 1, 'b'), dtype='float32')
+        if self.useFloat64:
+            new_space = pylearn2.space.Conv2DSpace((480, 640), num_channels=4,axes=('c', 0, 1, 'b'), dtype='float64')
+        else:
+            new_space = pylearn2.space.Conv2DSpace((480, 640), num_channels=4,axes=('c', 0, 1, 'b'), dtype='float32')
 
         cnn_model.layers = cnn_model.layers[0:-1]
 
@@ -50,7 +54,10 @@ class FeatureExtraction():
         self._feature_extractor = theano.function([X], Y)
 
     def run(self, img_in):
-        img = np.zeros((4, 480, 640, 1), dtype=np.float32)
+        if self.useFloat64:
+            img = np.zeros((4, 480, 640, 1), dtype=np.float64)
+        else:
+            img = np.zeros((4, 480, 640, 1), dtype=np.float32)
         img[:, :, :, 0] = np.rollaxis(img_in, 2, 0)
         out_raw = self._feature_extractor(img)
         out_rolled = np.rollaxis(out_raw, 1, 4)
@@ -80,10 +87,10 @@ class Crop():
 
 class GraspClassificationPipeline():
 
-    def __init__(self, model_filepath):
+    def __init__(self, model_filepath, useFloat64=False):
 
         self.model_filepath = model_filepath
-        self._feature_extraction = FeatureExtraction(model_filepath)
+        self._feature_extraction = FeatureExtraction(model_filepath, useFloat64=useFloat64)
         self._classification = Classification(model_filepath)
         self._normalization = Normalization()
         self._crop = Crop()
