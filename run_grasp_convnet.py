@@ -20,12 +20,6 @@ DATASET_FILEPATH = '/home/jvarley/grasp_deep_learning/data/rgbd_images/saxena_pa
 OUTPUT_DIRECTORY_PATH = "/home/jvarley/grasp_deep_learning/data/final_output/"
 
 
-def embedIPython():
-    import IPython
-    IPython.embed()
-    assert False
-
-
 def get_scaled_image(img, scale=(54, 74)):
     return scipy.misc.imresize(img, scale)
 
@@ -141,8 +135,12 @@ if __name__ == "__main__":
         print str(image_index) + "/" + str(num_images)
 
         rgbd_img = rgbd_images[image_index]
+
+        start = time.time()
         heatmap = grasp_classification_pipeline.run(rgbd_img)
-        plot(rgbd_img, heatmap, image_index, save=True)
+        print time.time() - start
+
+        #plot(rgbd_img, heatmap, image_index, save=True)
 
 
 
