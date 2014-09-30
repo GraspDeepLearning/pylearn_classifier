@@ -7,10 +7,10 @@ from pylearn2.config import yaml_parse
 
 
 #this is the directory where the models will be saved during training
-PYLEARN_MODEL_DIR = os.path.expanduser("~/grasp_deep_learning/pylearn2_classifier_gdl/models/")
+PYLEARN_MODEL_DIR = os.path.expanduser("~/grasp_deep_learning/pylearn_classifier_gdl/models/")
 
 #this is the directory where we get the model yaml file and hyper parameters from.
-PYLEARN_MODEL_TEMPLATE_DIR = os.path.expanduser("~/grasp_deep_learning/pylearn2_classifier_gdl/model_templates/")
+PYLEARN_MODEL_TEMPLATE_DIR = os.path.expanduser("~/grasp_deep_learning/pylearn_classifier_gdl/model_templates/")
 
 #the directory for the datasets we can train against.
 PYLEARN_DATASET_DIR = os.path.expanduser("~/grasp_deep_learning/data/deep_learning_grasp_data/")
