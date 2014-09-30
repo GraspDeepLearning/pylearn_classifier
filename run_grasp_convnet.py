@@ -21,8 +21,8 @@ from grasp_classification_pipeline import (
 
 PYLEARN_DATA_PATH = os.environ["PYLEARN2_DATA_PATH"]
 
-DEFAULT_CONV_MODEL_FILEPATH = os.path.expanduser('~/grasp_deep_learning/pylearn2_classifier_gdl/models/saxena_72x72_model/cnn_model.pkl')
-DEFAULT_DATASET_FILEPATH = os.path.expanduser('~/grasp_deep_learning/data/rgbd_images/saxena_partial_rgbd_and_labels.h5')
+PYLEARN_MODEL_DIR = os.path.expanduser('~/grasp_deep_learning/pylearn_classifier_gdl/models/')
+PYLEARN_DATASET_DIR = os.path.expanduser('~/grasp_deep_learning/data/')
 
 OUTPUT_DIRECTORY_PATH = os.path.expanduser('~/grasp_deep_learning/data/final_output/')
 
@@ -104,7 +104,7 @@ def drawGrasps(rawImg, extremas, save_filepath, save=True):
         pass
 
 
-def plot(rgbd_img, heatmap, image_index,  save=True):
+def plot(rgbd_img, heatmap, image_index, save=True):
 
     #raw_input
     save_filepath = OUTPUT_DIRECTORY_PATH + "rgb_input_" + str(image_index) + ".png"
@@ -126,10 +126,6 @@ def plot(rgbd_img, heatmap, image_index,  save=True):
 
     save_filepath = OUTPUT_DIRECTORY_PATH + "output_3d_extremas_" + str(image_index) + ".png"
     plot3d(extremas, save_filepath, save)
-
-    # using extrema for boxes
-    save_filepath = OUTPUT_DIRECTORY_PATH + "output_3d_extremas_" + str(image_index) + ".png"
-    drawGrasps(rgbd_img[:, :, 0:3], extremas[:, :, 0], save_filepath, save)
 
     # extrema imposed on output
     output_with_extremas_imposed = heatmap[:, :, 0] + (extremas[:, :, 0])
@@ -160,11 +156,68 @@ def plot(rgbd_img, heatmap, image_index,  save=True):
     plot2d(input_with_extremas_imposed, save_filepath, save)
 
 
+#Lets the user choose an existing pylearn model to run
+def get_model():
+
+    models = os.listdir(PYLEARN_MODEL_DIR)
+
+    print
+    print "Choose model: "
+    print
+
+    for i in range(len(models)):
+        print str(i) + ": " + models[i]
+
+    print
+    model_index = int(raw_input("Enter Id of model to run (ex 0, 1, or 2): "))
+
+    model = models[model_index]
+
+    return model
+
+
+#Allows the user to choose a specific dataset to run the model over
+def get_dataset_path():
+
+    dataset_folders = os.listdir(PYLEARN_DATASET_DIR)
+
+    print
+    print "Choose dataset folder: "
+    print
+
+    for i in range(len(dataset_folders)):
+        print str(i) + ": " + dataset_folders[i]
+
+    print
+    dataset_folder_index = int(raw_input("Enter Id of dataset folder (ex 0, 1, or 2): "))
+    dataset_folder = dataset_folders[dataset_folder_index]
+
+
+    datasets = os.listdir(PYLEARN_DATASET_DIR + dataset_folder + "/")
+
+    print
+    print "Choose dataset folder: "
+    print
+
+    for i in range(len(datasets)):
+        print str(i) + ": " + datasets[i]
+
+    print
+    dataset_index = int(raw_input("Enter Id of dataset folder (ex 0, 1, or 2): "))
+    dataset = datasets[dataset_index]
+
+    return (PYLEARN_DATASET_DIR + dataset_folder + "/" + dataset)
+
+
 if __name__ == "__main__":
 
-    grasp_classification_pipeline = GraspClassificationPipeline(DEFAULT_CONV_MODEL_FILEPATH, border_dim=CROP_BORDER_DIM, useFloat64=True)
+    conv_model_name = get_model()
+    conv_model_filepath = PYLEARN_MODEL_DIR + conv_model_name + "/cnn_model.pkl"
 
-    dataset = h5py.File(DEFAULT_DATASET_FILEPATH)
+    grasp_classification_pipeline = GraspClassificationPipeline(conv_model_filepath, border_dim=CROP_BORDER_DIM, useFloat64=True)
+
+    dataset_filepath = get_dataset_path()
+    dataset = h5py.File(dataset_filepath)
 
     rgbd_images = dataset['rgbd_data']
     num_images = rgbd_images.shape[0]
