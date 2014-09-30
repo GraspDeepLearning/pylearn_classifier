@@ -87,13 +87,13 @@ class Crop():
 
 class GraspClassificationPipeline():
 
-    def __init__(self, model_filepath, useFloat64=False):
+    def __init__(self, model_filepath, border_dim=15, useFloat64=False):
 
         self.model_filepath = model_filepath
         self._feature_extraction = FeatureExtraction(model_filepath, useFloat64=useFloat64)
         self._classification = Classification(model_filepath)
         self._normalization = Normalization()
-        self._crop = Crop()
+        self._crop = Crop(border_dim)
 
     def run(self, img_in, normalize=True, crop_border=True):
 
