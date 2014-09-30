@@ -31,8 +31,8 @@ NUM_LABELS = 1
 
 def get_dataset(which_set='train', dataset_filepath="/nyu_depth_labeled/rgbd_preprocessed_72x72.h5"):
 
-    hdf5_dataset_filename = PYLEARN_DATA_PATH + dataset_filepath
-    print hdf5_dataset_filename
+    hdf5_dataset_filename = dataset_filepath
+    print "hdf5_dataset_filename: " + hdf5_dataset_filename
     X = which_set + "_patches"
     y = which_set + "_patch_labels"
 
