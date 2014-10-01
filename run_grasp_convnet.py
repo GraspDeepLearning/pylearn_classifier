@@ -22,7 +22,7 @@ from grasp_classification_pipeline import (
 PYLEARN_DATA_PATH = os.environ["PYLEARN2_DATA_PATH"]
 
 DEFAULT_CONV_MODEL_FILEPATH = os.path.expanduser('~/grasp_deep_learning/pylearn2_classifier_gdl/models/saxena_72x72_model/cnn_model.pkl')
-DEFAULT_DATASET_FILEPATH = os.path.expanduser('~/grasp_deep_learning/data/rgbd_images/saxena_partial_rgbd_and_labels.h5')
+DEFAULT_DATASET_FILEPATH = os.path.expanduser('~/grasp_deep_learning/data/raw_rgbd_images/saxena_partial_rgbd_and_labels.h5')
 
 OUTPUT_DIRECTORY_PATH = os.path.expanduser('~/grasp_deep_learning/data/final_output/')
 
