@@ -49,7 +49,7 @@ if __name__ == "__main__":
     preprocess_attribs = dict(sets=("train", "test", "valid"),
                               num_patches_per_set=(100000, 10000, 10000),
                               patch_shape=(72, 72),
-                              raw_filepath=PYLEARN_DATA_PATH + "rgbd_images/",
+                              raw_filepath=PYLEARN_DATA_PATH + "raw_rgbd_images/",
                               output_filepath=PYLEARN_DATA_PATH + "deep_learning_grasp_data/rgbd_preprocessed_72x72.h5")
 
     preprocess_grasp_dataset(preprocess_attribs)

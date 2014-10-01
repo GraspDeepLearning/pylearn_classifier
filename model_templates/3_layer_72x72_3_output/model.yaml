@@ -37,7 +37,7 @@
                  },
                  !obj:pylearn2.models.mlp.Linear {
                     layer_name: 'y',
-                    dim: 1,
+                    dim: 3,
                     sparse_init: 15
                  }
                 ],
