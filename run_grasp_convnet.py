@@ -5,6 +5,7 @@ import h5py
 from scipy.signal import argrelextrema
 import scipy.misc
 import time
+import copy
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -91,17 +92,41 @@ def plot2d(img, save_filepath, save=True):
 
 
 def drawGrasps(rawImg, extremas, save_filepath, save=True):
-    importantExtremas = dict((e, i)
-                        for i,e in ndenumerate(extremas) if e > 0.0)
-    sortedExtremas = sorted(importantExtremas, key=lambda key: key, reverse=True)
-    for key in sortedExtremas:
-        print importantExtremas[key]
 
-    import IPython; IPython.embed()
-    if save:
-        pass
-    else:
-        pass
+    copiedImg = copy.deepcopy(rawImg)
+
+    extremaDict = dict((e, i)
+                       for i,e in ndenumerate(extremas)
+                       if e > 0.0)
+    sortedExtremas = sorted(extremaDict, key=lambda key: key, reverse=True)
+
+    #boxes = np.zeros((480, 640, 3))
+
+    #maxExtrema = extremaDict[sortedExtremas[0]]
+    #import IPython; IPython.embed()
+
+    for i, extrema in enumerate(sortedExtremas[-5:]):
+        maxExtrema = extremaDict[extrema]
+
+        heatVal = (i * 254 / 5)
+        #top
+        for i in range(-5,5):
+            copiedImg[maxExtrema[0]-5, maxExtrema[1] + i][:3] = [0.0,heatVal,0.0]
+            copiedImg[maxExtrema[0]-4, maxExtrema[1] + i][:3] = [0.0,heatVal,0.0]
+        #bot
+        for i in range(-5,5):
+            copiedImg[maxExtrema[0]+4, maxExtrema[1] + i][:3] = [0.0,heatVal,0.0]
+            copiedImg[maxExtrema[0]+5, maxExtrema[1] + i][:3] = [0.0,heatVal,0.0]
+        #left
+        for i in range(-5,5):
+            copiedImg[maxExtrema[0]+i, maxExtrema[1]-5][:3] = [0.0,heatVal,0.0]
+            copiedImg[maxExtrema[0]+i, maxExtrema[1]-4][:3] = [0.0,heatVal,0.0]
+        #right
+        for i in range(-5,5):
+            copiedImg[maxExtrema[0]+i, maxExtrema[1]+5][:3] = [0.0,heatVal,0.0]
+            copiedImg[maxExtrema[0]+i, maxExtrema[1]+4][:3] = [0.0,heatVal,0.0]
+
+    plot2d(copiedImg, save_filepath, save)
 
 
 def plot(rgbd_img, heatmap, image_index, save=True):
@@ -116,21 +141,21 @@ def plot(rgbd_img, heatmap, image_index, save=True):
 
     #show output heat map
     save_filepath = OUTPUT_DIRECTORY_PATH + "output_heatmap_" + str(image_index) + ".png"
-    plot2d(heatmap[:, :, 0], save_filepath, save)
+    #plot2d(heatmap[:, :, 0], save_filepath, save)
 
     # show extremas
     extremas = get_local_minima_above_threshold(heatmap)
 
     save_filepath = OUTPUT_DIRECTORY_PATH + "output_extremas_" + str(image_index) + ".png"
-    plot2d(extremas[:, :, 0], save_filepath, save)
+    #plot2d(extremas[:, :, 0], save_filepath, save)
 
     save_filepath = OUTPUT_DIRECTORY_PATH + "output_3d_extremas_" + str(image_index) + ".png"
-    plot3d(extremas, save_filepath, save)
+    #plot3d(extremas, save_filepath, save)
 
     # extrema imposed on output
     output_with_extremas_imposed = heatmap[:, :, 0] + (extremas[:, :, 0])
     save_filepath = OUTPUT_DIRECTORY_PATH + "output_with_extremas_" + str(image_index) + ".png"
-    plot2d(output_with_extremas_imposed, save_filepath, save)
+    #plot2d(output_with_extremas_imposed, save_filepath, save)
 
     #extrema imposed on input:
     border_dim = (2*CROP_BORDER_DIM, 2*CROP_BORDER_DIM)
@@ -139,21 +164,33 @@ def plot(rgbd_img, heatmap, image_index, save=True):
 
     #extremas_with_border[CROP_BORDER_DIM:-CROP_BORDER_DIM, CROP_BORDER_DIM:-CROP_BORDER_DIM] = extremas[:, :, 0]
     extremas_with_border[CROP_BORDER_DIM:-CROP_BORDER_DIM, CROP_BORDER_DIM:-CROP_BORDER_DIM] = heatmap[:, :, 0]
-    scaled_extremas = scipy.misc.imresize(extremas_with_border, rgbd_img.shape[0:2])
+    scaled_extremas = scipy.misc.imresize(extremas_with_border, rgbd_img.shape[0:2], interp='nearest')
 
+    #draw boxes where grasps would be
+    save_filepath = OUTPUT_DIRECTORY_PATH + "input_with_boxes_" + str(image_index) + ".png"
+    drawGrasps(rgbd_img[:, :, 0:3], scaled_extremas, save_filepath, save)
+
+    """
     input_with_extremas_imposed = np.zeros((480, 640, 3))
 
-    input_with_extremas_imposed[:, :, 0] = np.where(scaled_extremas <= np.percentile(-scaled_extremas, 99), scaled_extremas/scaled_extremas.max(), rgbd_img[:, :, 0])
-    input_with_extremas_imposed[:, :, 1] = np.where(scaled_extremas <= np.percentile(-scaled_extremas, 99), 1, rgbd_img[:, :, 1])
-    input_with_extremas_imposed[:, :, 2] = np.where(scaled_extremas <= np.percentile(-scaled_extremas, 99), 1, rgbd_img[:, :, 2])
+    input_with_extremas_imposed[:, :, 0] = np.where(scaled_extremas <= np.percentile(-scaled_extremas, 99), 
+                                                    scaled_extremas/scaled_extremas.max(),
+                                                    rgbd_img[:, :, 0])
+    input_with_extremas_imposed[:, :, 1] = np.where(scaled_extremas <= np.percentile(-scaled_extremas, 99),
+                                                    1,
+                                                    rgbd_img[:, :, 1])
+    input_with_extremas_imposed[:, :, 2] = np.where(scaled_extremas <= np.percentile(-scaled_extremas, 99),
+                                                    1,
+                                                    rgbd_img[:, :, 2])
 
-    max_i = np.argmin(scaled_extremas) / 640
-    max_j = np.argmin(scaled_extremas) % 640
+    max_i = np.argmax(scaled_extremas) / 640
+    max_j = np.argmax(scaled_extremas) % 640
 
     input_with_extremas_imposed[max_i-5:max_i+5, max_j-5:max_j+5, :] = 0
 
     save_filepath = OUTPUT_DIRECTORY_PATH + "input_with_extremas_" + str(image_index) + ".png"
     plot2d(input_with_extremas_imposed, save_filepath, save)
+    """
 
 
 #Lets the user choose an existing pylearn model to run
