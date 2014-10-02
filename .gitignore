@@ -3,4 +3,5 @@
 *.pkl
 *.png
 *.*~
+models/*
 .idea/*
