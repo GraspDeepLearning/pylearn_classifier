@@ -1,5 +1,5 @@
 !obj:pylearn2.train.Train {
-    dataset: &train !obj:rgbd_c01b_dataset.get_dataset {
+    dataset: &train !obj:datasets.rgbd_c01b_dataset.get_dataset {
         which_set: 'c01b_train',
         dataset_filepath: %(dataset)s,
     },
@@ -51,11 +51,11 @@
         },
         monitoring_dataset:
             {
-                'valid' : !obj:rgbd_c01b_dataset.get_dataset {
+                'valid' : !obj:datasets.rgbd_c01b_dataset.get_dataset {
                               which_set: 'c01b_valid',
                               dataset_filepath: %(dataset)s,
                           },
-                'test'  : !obj:rgbd_c01b_dataset.get_dataset {
+                'test'  : !obj:datasets.rgbd_c01b_dataset.get_dataset {
                               which_set: 'c01b_test',
                               dataset_filepath: %(dataset)s,
                           }

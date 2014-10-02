@@ -27,7 +27,7 @@ PYLEARN_DATA_PATH = os.environ["PYLEARN2_DATA_PATH"]
 #NUM_LABELS = 894
 
 NUM_TRAINING_SAMPLES = 100000
-NUM_LABELS = 1
+NUM_LABELS = 3
 
 def get_dataset(which_set='train', dataset_filepath="/nyu_depth_labeled/rgbd_preprocessed_72x72.h5"):
 
@@ -113,7 +113,6 @@ class HDF5Dataset(DenseDesignMatrix):
         load_all : bool, optional (default False)
             If true, load dataset into memory.
         """
-
         if load_all:
             data = self._file[dataset][:]
         else:

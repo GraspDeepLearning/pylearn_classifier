@@ -24,61 +24,21 @@ def get_save_path(model_template, dataset):
     return paths.MODEL_DIR + dataset + "_" + model_template + "_" + t_string
 
 
-#the model template is the model without the save path and dataset specified
-def get_model_template():
-
-    model_templates = os.listdir(paths.MODEL_TEMPLATE_DIR)
-
-    print
-    print "Choose model: "
-    print
-
-    for i in range(len(model_templates)):
-        print str(i) + ": " + model_templates[i]
-
-    print
-    model_template_index = int(raw_input("Enter Id of model to train (ex 0, 1, or 2): "))
-
-    model_template = model_templates[model_template_index]
-
-    return model_template
-
-
-#the dataset we are going to train the model against
-def get_dataset():
-
-    datasets = os.listdir(paths.PROCESSED_TRAINING_DATASET_DIR)
-
-    print
-    print "Choose dataset: "
-    print
-
-    for i in range(len(datasets)):
-        print str(i) + ": " + datasets[i]
-
-    print
-    dataset_index = int(raw_input("Enter Id of dataset to train on (ex 0, 1, or 2): "))
-
-    dataset = datasets[dataset_index]
-
-    return dataset
-
-
 #have the user choose:
 # 1) a model template
 # 2) a dataset to train against.
 #then modify the hyper_params to specify a save location as well as the dataset used.
 def build_model():
 
-    model_template = get_model_template()
-    dataset = get_dataset()
+    model_template = paths.choose_from(paths.MODEL_TEMPLATE_DIR)
+    dataset = paths.choose_from(paths.PROCESSED_TRAINING_DATASET_DIR)
 
     model_template_yaml = open(paths.MODEL_TEMPLATE_DIR + model_template + "/model.yaml", 'r').read()
     hyper_params_file = open(paths.MODEL_TEMPLATE_DIR + model_template + "/hyper_params.yaml", 'r').read()
 
     hyper_params_dict = yaml_parse.load(hyper_params_file)
     hyper_params_dict['save_path'] = get_save_path(model_template, dataset)
-    hyper_params_dict['dataset'] = paths.RAW_TRAINING_DATASET_DIR + dataset
+    hyper_params_dict['dataset'] = paths.PROCESSED_TRAINING_DATASET_DIR + dataset
 
     return model_template_yaml, hyper_params_dict
 
