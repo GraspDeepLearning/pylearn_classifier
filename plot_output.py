@@ -41,7 +41,7 @@ class BaseFigureGenerator():
 
 class InputOutputFigure(BaseFigureGenerator):
 
-    def plot(self,figure):
+    def plot(self, figure):
 
         subplot_index = 1
 
@@ -163,27 +163,10 @@ def get_scaled_extremas(rgbd_img, heatmaps, extremas):
     return scaled_extremas
 
 
-#Allows the user to choose a specific dataset to run the model over
-def get_dataset_file():
-
-    datasets = os.listdir(paths.HEATMAPS_DATASET_DIR)
-
-    print
-    print "Choose dataset file: "
-    print
-
-    for i in range(len(datasets)):
-        print str(i) + ": " + datasets[i]
-
-    print
-    dataset_index = int(raw_input("Enter Id of dataset file (ex 0, 1, or 2): "))
-    dataset_file = datasets[dataset_index]
-
-    return h5py.File(paths.HEATMAPS_DATASET_DIR + dataset_file)
-
-
 def main():
-    dataset = get_dataset_file()
+
+    dataset_file = paths.choose_from(paths.HEATMAPS_DATASET_DIR)
+    dataset = h5py.File(paths.HEATMAPS_DATASET_DIR + dataset_file)
 
     for i in range(dataset['rgbd_data'].shape[0]):
         rgbd_img = dataset['rgbd_data'][i]

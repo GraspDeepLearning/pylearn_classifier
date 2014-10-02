@@ -5,28 +5,7 @@ import os
 from pylearn2.datasets import preprocessing
 
 import hdf5_data_preprocessors
-
 import paths
-
-
-#the dataset we are going to train the model against
-def get_raw_rgbd():
-
-    raw_rgbd_data_files = os.listdir(paths.RAW_TRAINING_DATASET_DIR)
-
-    print
-    print "Choose raw input: "
-    print
-
-    for i in range(len(raw_rgbd_data_files)):
-        print str(i) + ": " + raw_rgbd_data_files[i]
-
-    print
-    raw_rgbd_index = int(raw_input("Enter Id of rgbd_images to preprocess (ex 0, 1, or 2): "))
-
-    raw_rgbd_data_file = raw_rgbd_data_files[raw_rgbd_index]
-
-    return raw_rgbd_data_file
 
 
 def preprocess_grasp_dataset(attribs):
@@ -51,11 +30,12 @@ def preprocess_grasp_dataset(attribs):
 
 if __name__ == "__main__":
 
-    raw_rgbd_datafile = get_raw_rgbd()
+    raw_rgbd_datafile = paths.choose_from(paths.RAW_TRAINING_DATASET_DIR)
+    raw_rgbd_filepath = paths.RAW_TRAINING_DATASET_DIR + raw_rgbd_datafile
 
     preprocess_attribs = dict(sets=("train", "test", "valid"),
                               patch_shape=(72, 72),
-                              raw_filepath= paths.RAW_TRAINING_DATASET_DIR + raw_rgbd_datafile,
+                              raw_filepath=raw_rgbd_filepath,
                               output_filepath=paths.PROCESSED_TRAINING_DATASET_DIR + 'processed_' + raw_rgbd_datafile)
 
     preprocess_grasp_dataset(preprocess_attribs)
