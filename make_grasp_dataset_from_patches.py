@@ -6,15 +6,13 @@ from pylearn2.datasets import preprocessing
 
 import hdf5_data_preprocessors
 
-PYLEARN_DATA_PATH = os.path.expanduser(os.environ["PYLEARN2_DATA_PATH"])
-RAW_RGBD_DATA_FILES_PATH = PYLEARN_DATA_PATH + 'raw_rgbd_images/'
-PROCESSED_PATCH_FILES_PATH = PYLEARN_DATA_PATH + 'deep_learning_grasp_data/'
+import paths
 
 
 #the dataset we are going to train the model against
 def get_raw_rgbd():
 
-    raw_rgbd_data_files = os.listdir(RAW_RGBD_DATA_FILES_PATH)
+    raw_rgbd_data_files = os.listdir(paths.RAW_TRAINING_DATASET_DIR)
 
     print
     print "Choose raw input: "
@@ -44,8 +42,8 @@ def preprocess_grasp_dataset(attribs):
     pipeline.items.append(hdf5_data_preprocessors.MakeC01B())
 
     #now lets actually make a new dataset and run it through the pipeline
-    if not os.path.exists(PYLEARN_DATA_PATH + "deep_learning_grasp_data"):
-        os.makedirs(PYLEARN_DATA_PATH + "deep_learning_grasp_data")
+    if not os.path.exists(paths.PYLEARN_DATA_PATH + "deep_learning_grasp_data"):
+        os.makedirs(paths.PYLEARN_DATA_PATH + "deep_learning_grasp_data")
 
     hd5f_dataset = h5py.File(attribs["output_filepath"])
     pipeline.apply(hd5f_dataset)
@@ -57,7 +55,7 @@ if __name__ == "__main__":
 
     preprocess_attribs = dict(sets=("train", "test", "valid"),
                               patch_shape=(72, 72),
-                              raw_filepath= RAW_RGBD_DATA_FILES_PATH + raw_rgbd_datafile,
-                              output_filepath=PROCESSED_PATCH_FILES_PATH + 'processed_' + raw_rgbd_datafile)
+                              raw_filepath= paths.RAW_TRAINING_DATASET_DIR + raw_rgbd_datafile,
+                              output_filepath=paths.PROCESSED_TRAINING_DATASET_DIR + 'processed_' + raw_rgbd_datafile)
 
     preprocess_grasp_dataset(preprocess_attribs)

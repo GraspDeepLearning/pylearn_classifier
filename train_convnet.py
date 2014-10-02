@@ -5,15 +5,7 @@ import time
 from pylearn2.testing import skip
 from pylearn2.config import yaml_parse
 
-
-#this is the directory where the models will be saved during training
-PYLEARN_MODEL_DIR = os.path.expanduser("~/grasp_deep_learning/pylearn_classifier_gdl/models/")
-
-#this is the directory where we get the model yaml file and hyper parameters from.
-PYLEARN_MODEL_TEMPLATE_DIR = os.path.expanduser("~/grasp_deep_learning/pylearn_classifier_gdl/model_templates/")
-
-#the directory for the datasets we can train against.
-PYLEARN_DATASET_DIR = os.path.expanduser("~/grasp_deep_learning/data/deep_learning_grasp_data/")
+import paths
 
 
 #helper to build up the save path from the name of the model and the current time.
@@ -29,13 +21,13 @@ def get_save_path(model_template, dataset):
     #remove '.h5' from the dataset
     dataset = dataset[:-3]
 
-    return PYLEARN_MODEL_DIR + dataset + "_" + model_template + "_" + t_string
+    return paths.MODEL_DIR + dataset + "_" + model_template + "_" + t_string
 
 
 #the model template is the model without the save path and dataset specified
 def get_model_template():
 
-    model_templates = os.listdir(PYLEARN_MODEL_TEMPLATE_DIR)
+    model_templates = os.listdir(paths.MODEL_TEMPLATE_DIR)
 
     print
     print "Choose model: "
@@ -55,7 +47,7 @@ def get_model_template():
 #the dataset we are going to train the model against
 def get_dataset():
 
-    datasets = os.listdir(PYLEARN_DATASET_DIR)
+    datasets = os.listdir(paths.PROCESSED_TRAINING_DATASET_DIR)
 
     print
     print "Choose dataset: "
@@ -81,12 +73,12 @@ def build_model():
     model_template = get_model_template()
     dataset = get_dataset()
 
-    model_template_yaml = open(PYLEARN_MODEL_TEMPLATE_DIR + model_template + "/model.yaml", 'r').read()
-    hyper_params_file = open(PYLEARN_MODEL_TEMPLATE_DIR + model_template + "/hyper_params.yaml", 'r').read()
+    model_template_yaml = open(paths.MODEL_TEMPLATE_DIR + model_template + "/model.yaml", 'r').read()
+    hyper_params_file = open(paths.MODEL_TEMPLATE_DIR + model_template + "/hyper_params.yaml", 'r').read()
 
     hyper_params_dict = yaml_parse.load(hyper_params_file)
     hyper_params_dict['save_path'] = get_save_path(model_template, dataset)
-    hyper_params_dict['dataset'] = PYLEARN_DATASET_DIR + dataset
+    hyper_params_dict['dataset'] = paths.RAW_TRAINING_DATASET_DIR + dataset
 
     return model_template_yaml, hyper_params_dict
 
@@ -96,7 +88,7 @@ def build_model():
 #even if the template files are changed.
 def prep_model_save_path(save_path, model_yaml, hyper_params_dict):
 
-    assert PYLEARN_MODEL_DIR in save_path
+    assert paths.MODEL_DIR in save_path
 
     if os.path.exists(save_path):
         for file_name in os.listdir(save_path):
