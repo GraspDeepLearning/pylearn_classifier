@@ -16,15 +16,18 @@ class Classification():
         cnn_model = cnn_model.layers[-1]
 
         W = cnn_model.get_weights_topo()
-        W = W[0, 0, :, :]
+        #W = W[0, 0, :, :]
 
         b = cnn_model.b.get_value()
 
         self.W = W
         self.b = b
-
+        #import IPython
+        #IPython.embed()
     def run(self, X):
-        return np.dot(X, self.W) + self.b
+        #import IPython
+        #IPython.embed()
+        return np.dot(X, self.W)[:,:,:,0,0] + self.b
 
 
 class FeatureExtraction():
