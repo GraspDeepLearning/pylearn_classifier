@@ -1,30 +1,45 @@
 
-
-import h5py
-import time
-
-from grasp_classification_pipeline import GraspClassificationPipeline
+from grasp_classification_pipeline import *
 
 import paths
+import os
 
 CROP_BORDER_DIM = 15
 
+DATA_SIZES = dict(rgbd_data=(900, 480, 640, 4),
+                  extracted_features=(900, 64, 84, 32),
+                  heatmaps=(900, 64, 84, 3),
+                  normalized_heatmaps=(900, 64, 84, 3),
+                  cropped_heatmaps=(900, 34, 54, 3),
+                  convolved_heatmaps=(900, 381, 541, 3),
+                  independent_grasp_points=(900, 3, 480, 640, 3),
+                  dependent_grasp_points=(900, 3, 480, 640, 3)
+                  )
 
-def get_save_path(input_data_file, input_model_file):
-    return paths.HEATMAPS_DATASET_DIR + input_data_file[:-3] + '_' + input_model_file + '.h5'
+CHUNK_SIZES = dict(rgbd_data=(10, 480, 640, 4),
+                   extracted_features=(10, 64, 84, 32),
+                   heatmaps=(10, 64, 84, 3),
+                   normalized_heatmaps=(10, 64, 84, 3),
+                   cropped_heatmaps=(10, 34, 54, 3),
+                   convolved_heatmaps=(10, 381, 541, 3),
+                   independent_grasp_points=(10, 3, 480, 640, 3),
+                   dependent_grasp_points=(10, 3, 480, 640, 3)
+                   )
 
 
-def save(rgbd_img, heatmaps, image_index, save_file, num_images):
-    if 'rgbd_data' not in save_file.keys():
-        save_file.create_dataset('rgbd_data', (num_images, rgbd_img.shape[0], rgbd_img.shape[1], rgbd_img.shape[2]),
-                                 chunks=(10, rgbd_img.shape[0], rgbd_img.shape[1], rgbd_img.shape[2]))
+def init_save_file(input_data_file, input_model_file):
 
-    if 'heatmaps' not in save_file.keys():
-        save_file.create_dataset('heatmaps', (num_images, heatmaps.shape[0], heatmaps.shape[1], heatmaps.shape[2]),
-                                 chunks=(10, heatmaps.shape[0], heatmaps.shape[1], heatmaps.shape[2]))
+    dataset_filepath = paths.HEATMAPS_DATASET_DIR + input_data_file[:-3] + '_' + input_model_file + '3.h5'
 
-    save_file['rgbd_data'][image_index] = rgbd_img
-    save_file['heatmaps'][image_index] = heatmaps
+    if os.path.exists(dataset_filepath):
+        os.remove(dataset_filepath)
+
+    dataset = h5py.File(dataset_filepath)
+
+    for key in DATA_SIZES.keys():
+        dataset.create_dataset(key, DATA_SIZES[key], chunks=CHUNK_SIZES[key])
+
+    return dataset_filepath
 
 
 def main():
@@ -32,31 +47,24 @@ def main():
     conv_model_filepath = paths.MODEL_DIR + conv_model_name + "/cnn_model.pkl"
 
     dataset_file = paths.choose_from(paths.RAW_TRAINING_DATASET_DIR)
-    dataset_filepath = paths.RAW_TRAINING_DATASET_DIR + dataset_file
+    raw_rgbd_filepath = paths.RAW_TRAINING_DATASET_DIR + dataset_file
 
-    save_filepath = get_save_path(dataset_file, conv_model_name)
-    save_file = h5py.File(save_filepath)
+    priors_filepath = paths.PRIORS_DIR + 'saxena_rect_priors.h5'
 
-    grasp_classification_pipeline = GraspClassificationPipeline(conv_model_filepath, border_dim=CROP_BORDER_DIM, useFloat64=False)
+    save_filepath = init_save_file(dataset_file, conv_model_name)
 
-    dataset = h5py.File(dataset_filepath)
+    pipeline = GraspClassificationPipeline(save_filepath, raw_rgbd_filepath)
 
-    rgbd_images = dataset['rgbd_data']
+    pipeline.add_stage(CopyInRaw(raw_rgbd_filepath))
+    pipeline.add_stage(FeatureExtraction(conv_model_filepath, useFloat64=False))
+    pipeline.add_stage(Classification(conv_model_filepath))
+    pipeline.add_stage(Normalization())
+    pipeline.add_stage(Crop(CROP_BORDER_DIM))
+    pipeline.add_stage(ConvolvePriors(priors_filepath))
+    pipeline.add_stage(CalculateTopFive(input_key='convolved_heatmaps', output_key='dependent_grasp_points'))
+    pipeline.add_stage(CalculateTopFive(input_key='cropped_heatmaps', output_key='independent_grasp_points'))
 
-    num_images = rgbd_images.shape[0]
-
-    for image_index in range(num_images):
-
-        print str(image_index) + "/" + str(num_images)
-
-        rgbd_img = rgbd_images[image_index]
-
-        start = time.time()
-        heatmaps = grasp_classification_pipeline.run(rgbd_img)
-        print time.time() - start
-
-        save(rgbd_img, heatmaps, image_index, save_file, num_images)
-
+    pipeline.run()
 
 if __name__ == "__main__":
     main()

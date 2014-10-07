@@ -23,6 +23,8 @@ MODEL_TEMPLATE_DIR = os.path.expanduser("~/grasp_deep_learning/pylearn_classifie
 #this is the output from running a model on a dataset
 HEATMAPS_DATASET_DIR = PYLEARN_DATA_PATH + 'heatmaps/'
 
+PRIORS_DIR = PYLEARN_DATA_PATH + 'grasp_priors/'
+
 
 #We often want to choose a model or a dataset
 #so generic method to choose a file or folder out of a directory
