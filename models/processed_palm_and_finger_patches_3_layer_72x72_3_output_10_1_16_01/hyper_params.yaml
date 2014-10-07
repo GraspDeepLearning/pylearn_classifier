@@ -1,7 +1,0 @@
-batch_size: 1
-dataset: /home/jvarley/grasp_deep_learning/data/deep_learning_grasp_data/processed_palm_and_finger_patches.h5
-save_path: /home/jvarley/grasp_deep_learning/pylearn_classifier_gdl/models/processed_palm_and_finger_patches_3_layer_72x72_3_output_10_1_16_01
-max_epochs: 10000
-output_channels_h2: 64
-output_channels_h1: 64
-output_channels_h0: 64
