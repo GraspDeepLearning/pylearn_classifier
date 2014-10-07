@@ -276,6 +276,7 @@ class HDF5Dataset(DenseDesignMatrix):
         # Update data specs
         X_space = VectorSpace(dim=V.shape[axes.index('b')])
         X_source = 'features'
+
         if self.y is None:
             space = X_space
             source = X_source
