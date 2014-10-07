@@ -1,5 +1,5 @@
 batch_size: 1
-output_channels_h0: 64
-output_channels_h1: 64
-output_channels_h2: 64
+output_channels_h0: 32
+output_channels_h1: 32
+output_channels_h2: 32
 max_epochs: 10000
