@@ -7,7 +7,8 @@ import os
 CROP_BORDER_DIM = 15
 
 DATA_SIZES = dict(rgbd_data=(900, 480, 640, 4),
-                  extracted_features=(900, 64, 84, 32),
+                  rgbd_data_normalized=(900, 480, 640, 4),
+                  extracted_features=(900, 64, 84, 64),
                   heatmaps=(900, 64, 84, 3),
                   normalized_heatmaps=(900, 64, 84, 3),
                   cropped_heatmaps=(900, 34, 54, 3),
@@ -17,7 +18,8 @@ DATA_SIZES = dict(rgbd_data=(900, 480, 640, 4),
                   )
 
 CHUNK_SIZES = dict(rgbd_data=(10, 480, 640, 4),
-                   extracted_features=(10, 64, 84, 32),
+                   rgbd_data_normalized=(10, 480, 640, 4),
+                   extracted_features=(10, 64, 84, 64),
                    heatmaps=(10, 64, 84, 3),
                    normalized_heatmaps=(10, 64, 84, 3),
                    cropped_heatmaps=(10, 34, 54, 3),
@@ -29,7 +31,7 @@ CHUNK_SIZES = dict(rgbd_data=(10, 480, 640, 4),
 
 def init_save_file(input_data_file, input_model_file):
 
-    dataset_filepath = paths.HEATMAPS_DATASET_DIR + input_data_file[:-3] + '_' + input_model_file + '3.h5'
+    dataset_filepath = paths.HEATMAPS_DATASET_DIR + input_data_file[:-3] + '_' + input_model_file + '4.h5'
 
     if os.path.exists(dataset_filepath):
         os.remove(dataset_filepath)
@@ -56,6 +58,7 @@ def main():
     pipeline = GraspClassificationPipeline(save_filepath, raw_rgbd_filepath)
 
     pipeline.add_stage(CopyInRaw(raw_rgbd_filepath))
+    pipeline.add_stage(NormalizeRaw())
     pipeline.add_stage(FeatureExtraction(conv_model_filepath, useFloat64=False))
     pipeline.add_stage(Classification(conv_model_filepath))
     pipeline.add_stage(Normalization())

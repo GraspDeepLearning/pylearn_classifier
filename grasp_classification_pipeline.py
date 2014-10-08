@@ -23,6 +23,21 @@ class CopyInRaw():
         dataset['rgbd_data'][index] = self.raw_rgbd_dataset['rgbd_data'][index]
 
 
+class NormalizeRaw():
+
+    def __init__(self):
+        pass
+
+    def run(self,dataset,index):
+        rgbd_img = dataset['rgbd_data'][index]
+
+        rgbd_img_norm = np.zeros_like(rgbd_img)
+        for i in range(4):
+            rgbd_img_norm[:, :, i] = (rgbd_img[:, :, i] + rgbd_img[:, :, i].min()) / (rgbd_img[:, :, i].max() + rgbd_img[:, :, i].min())
+
+        dataset['rgbd_data_normalized'][index] = rgbd_img_norm
+
+
 class FeatureExtraction():
 
     def __init__(self, model_filepath, useFloat64=False):
@@ -51,7 +66,7 @@ class FeatureExtraction():
 
     def run(self, dataset, index):
 
-        img_in = dataset['rgbd_data'][index]
+        img_in = dataset['rgbd_data_normalized'][index]
 
         if self.useFloat64:
             img = np.zeros((4, 480, 640, 1), dtype=np.float64)
