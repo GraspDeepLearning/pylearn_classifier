@@ -54,54 +54,54 @@ def main():
         convolved_heatmaps = dataset['convolved_heatmaps'][i]
         dependent_grasp_points = dataset["dependent_grasp_points"][i]
 
-        # plotter = Plotter()
-        #
-        # plotter.add_subplot('rgb', rgbd_img[:, :, 0:3])
-        # plotter.add_subplot('d', rgbd_img[:, :, 3])
-        # plotter.add_subplot('d', rgbd_img[:, :, 3])
-        #
-        # plotter.add_subplot('l_obs', heatmaps[:, :, 0])
-        # plotter.add_subplot('p_obs', heatmaps[:, :, 1])
-        # plotter.add_subplot('r_obs', heatmaps[:, :, 2])
-        #
-        # plotter.add_subplot('l_independent', indepent_grasp_points[0, :, :, :])
-        # plotter.add_subplot('p_independent', indepent_grasp_points[1, :, :, :])
-        # plotter.add_subplot('r_independent', indepent_grasp_points[2, :, :, :])
-        #
-        # # plotter.add_subplot('l_convolved', convolved_heatmaps[:, :, 0])
-        # # plotter.add_subplot('p_convolved', convolved_heatmaps[:, :, 1])
-        # # plotter.add_subplot('r_convolved', convolved_heatmaps[:, :, 2])
-        #
-        # # plotter.add_subplot('l_dependent', dependent_grasp_points[0, :, :, :])
-        # # plotter.add_subplot('p_dependent', dependent_grasp_points[1, :, :, :])
-        # # plotter.add_subplot('r_dependent', dependent_grasp_points[2, :, :, :])
-        #
-        # plotter.show()
+        plotter = Plotter()
 
-        fig = plt.figure(2)
-        ax = fig.gca(projection='3d')
-        X = []
-        Y = []
-        Z = []
+        plotter.add_subplot('rgb', rgbd_img[:, :, 0:3])
+        plotter.add_subplot('d', rgbd_img[:, :, 3])
+        plotter.add_subplot('d', rgbd_img[:, :, 3])
 
-        for x in range(heatmaps.shape[0]):
-            for y in range(heatmaps.shape[1]):
-                X.append(x)
-                Y.append(y)
-                Z.append(heatmaps[x, y, 0])
+        plotter.add_subplot('l_obs', heatmaps[:, :, 0])
+        plotter.add_subplot('p_obs', heatmaps[:, :, 1])
+        plotter.add_subplot('r_obs', heatmaps[:, :, 2])
 
-        #X, Y = np.meshgrid(X, Y)
-        X
-        surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.coolwarm,
-                linewidth=0, antialiased=False)
-        ax.set_zlim(-1.01, 1.01)
+        plotter.add_subplot('l_independent', indepent_grasp_points[0, :, :, :])
+        plotter.add_subplot('p_independent', indepent_grasp_points[1, :, :, :])
+        plotter.add_subplot('r_independent', indepent_grasp_points[2, :, :, :])
 
-        ax.zaxis.set_major_locator(LinearLocator(10))
-        ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+        plotter.add_subplot('l_convolved', convolved_heatmaps[:, :, 0])
+        plotter.add_subplot('p_convolved', convolved_heatmaps[:, :, 1])
+        plotter.add_subplot('r_convolved', convolved_heatmaps[:, :, 2])
 
-        fig.colorbar(surf, shrink=0.5, aspect=5)
+        plotter.add_subplot('l_dependent', dependent_grasp_points[0, :, :, :])
+        plotter.add_subplot('p_dependent', dependent_grasp_points[1, :, :, :])
+        plotter.add_subplot('r_dependent', dependent_grasp_points[2, :, :, :])
 
-        plt.show()
+        plotter.show()
+
+        # fig = plt.figure(2)
+        # ax = fig.gca(projection='3d')
+        # X = []
+        # Y = []
+        # Z = []
+        #
+        # for x in range(heatmaps.shape[0]):
+        #     for y in range(heatmaps.shape[1]):
+        #         X.append(x)
+        #         Y.append(y)
+        #         Z.append(heatmaps[x, y, 0])
+        #
+        # #X, Y = np.meshgrid(X, Y)
+        # X
+        # surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.coolwarm,
+        #         linewidth=0, antialiased=False)
+        # ax.set_zlim(-1.01, 1.01)
+        #
+        # ax.zaxis.set_major_locator(LinearLocator(10))
+        # ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+        #
+        # fig.colorbar(surf, shrink=0.5, aspect=5)
+        #
+        # plt.show()
 
 if __name__ == '__main__':
     main()

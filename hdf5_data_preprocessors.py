@@ -68,6 +68,7 @@ class SplitGraspPatches(preprocessing.Preprocessor):
             label_key = output_key_pair[1]
 
             num_patches = math.floor(self.output_weights[index] * self.source_dataset[self.source_keys[0]].shape[0])
+            num_patches = num_patches - (num_patches % 20)
             patch_shape = self.source_dataset[self.source_keys[0]].shape[1:4]
 
             #dataset.create_dataset(patch_key, (num_patches, patch_shape[0], patch_shape[1], patch_shape[2]), chunks=(100, patch_shape[0], patch_shape[1], patch_shape[2]))
@@ -102,7 +103,7 @@ class ExtractGraspPatches(preprocessing.Preprocessor):
             return
 
         dataset.create_dataset(self.patch_labels[0], (self.num_patches, self.patch_shape[0], self.patch_shape[1], 4), chunks=(100, self.patch_shape[0], self.patch_shape[1], 4))
-        dataset.create_dataset(self.patch_labels[1], (self.num_patches, 1))
+        dataset.create_dataset(self.patch_labels[1], (self.num_patches, 1), chunks=(100, 1))
 
 
         X = dataset[self.patch_source_labels[0]]
@@ -150,6 +151,8 @@ class ExtractGraspPatches(preprocessing.Preprocessor):
                             if i == self.num_patches:
                                 return
             iteration_count += 1
+
+
 
 class PerChannelGlobalContrastNormalizePatches(preprocessing.Preprocessor):
 
