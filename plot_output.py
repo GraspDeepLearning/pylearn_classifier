@@ -97,30 +97,7 @@ def main():
 
         plotter.show()
 
-        # fig = plt.figure(2)
-        # ax = fig.gca(projection='3d')
-        # X = []
-        # Y = []
-        # Z = []
-        #
-        # for x in range(heatmaps.shape[0]):
-        #     for y in range(heatmaps.shape[1]):
-        #         X.append(x)
-        #         Y.append(y)
-        #         Z.append(heatmaps[x, y, 0])
-        #
-        # #X, Y = np.meshgrid(X, Y)
-        # X
-        # surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.coolwarm,
-        #         linewidth=0, antialiased=False)
-        # ax.set_zlim(-1.01, 1.01)
-        #
-        # ax.zaxis.set_major_locator(LinearLocator(10))
-        # ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-        #
-        # fig.colorbar(surf, shrink=0.5, aspect=5)
-        #
-        # plt.show()
+
 
 if __name__ == '__main__':
     main()
