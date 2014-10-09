@@ -15,6 +15,18 @@ import paths
 CROP_BORDER_DIM = 15
 
 
+class format_subplot():
+
+    def __init__(self, ax, img):
+        self.ax = ax
+        self.img = img
+        self.ax.format_coord = self.format_coord
+
+    def format_coord(self, x, y):
+
+        return "x=" + str(x) + "  y=" + str(y) + "  z=" + str(self.img[int(y),int(x)])
+
+
 class Plotter():
 
     def __init__(self):
@@ -41,6 +53,7 @@ class Plotter():
             print img.shape
 
             ax = plt.subplot(x_dim, y_dim, i + 1)
+            format_subplot(ax, img)
             plt.title(title)
             plt.imshow(img)
 
