@@ -57,6 +57,7 @@ class FeatureExtraction():
         for i in range(len(cnn_model.layers)):
             cnn_model.layers[i].border_mode = "full"
 
+        cnn_model.set_batch_size(1)
         cnn_model.set_input_space(new_space)
 
         X = cnn_model.get_input_space().make_theano_batch()
@@ -74,6 +75,7 @@ class FeatureExtraction():
             img = np.zeros((4, 480, 640, 1), dtype=np.float32)
 
         img[:, :, :, 0] = np.rollaxis(img_in, 2, 0)
+
         out_raw = self._feature_extractor(img)
         out_rolled = np.rollaxis(out_raw, 1, 4)
         out_window = out_rolled[0, :, :, :]
