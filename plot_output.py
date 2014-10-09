@@ -40,7 +40,7 @@ class Plotter():
             print "plotting: " + str(title)
             print img.shape
 
-            plt.subplot(x_dim, y_dim, i + 1)
+            ax = plt.subplot(x_dim, y_dim, i + 1)
             plt.title(title)
             plt.imshow(img)
 
@@ -64,7 +64,7 @@ def main():
 
     for i in range(dataset['rgbd_data'].shape[0]):
         rgbd_img = dataset['rgbd_data'][i]
-        heatmaps = dataset['heatmaps'][i]
+        heatmaps = dataset['normalized_heatmaps'][i]
         indepent_grasp_points = dataset["independent_grasp_points"][i]
         convolved_heatmaps = dataset['convolved_heatmaps'][i]
         dependent_grasp_points = dataset["dependent_grasp_points"][i]
@@ -75,13 +75,13 @@ def main():
         plotter.add_subplot('d', rgbd_img[:, :, 3])
         plotter.add_subplot('d', rgbd_img[:, :, 3])
 
-        plotter.add_subplot('l_obs', heatmaps[:, :, 0])
-        plotter.add_subplot('p_obs', heatmaps[:, :, 1])
-        plotter.add_subplot('r_obs', heatmaps[:, :, 2])
+        plotter.add_subplot('l_obs', heatmaps[:, :, 0]/heatmaps[:,:,0].max())
+        plotter.add_subplot('p_obs', heatmaps[:, :, 1]/heatmaps[:,:,1].max())
+        plotter.add_subplot('r_obs', heatmaps[:, :, 2]/heatmaps[:,:,2].max())
 
-        plotter.add_histogram('l_obs', heatmaps[:, :, 0])
-        plotter.add_histogram('p_obs', heatmaps[:, :, 1])
-        plotter.add_histogram('r_obs', heatmaps[:, :, 2])
+        plotter.add_histogram('l_obs', heatmaps[:, :, 0]/heatmaps[:,:,0].max())
+        plotter.add_histogram('p_obs', heatmaps[:, :, 1]/heatmaps[:,:,1].max())
+        plotter.add_histogram('r_obs', heatmaps[:, :, 2]/heatmaps[:,:,2].max())
 
         plotter.add_subplot('l_independent', indepent_grasp_points[0, :, :, :])
         plotter.add_subplot('p_independent', indepent_grasp_points[1, :, :, :])
