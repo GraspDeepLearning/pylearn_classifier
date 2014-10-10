@@ -97,12 +97,12 @@ def main():
         plotter.add_histogram('p_obs', heatmaps[:, :, 1]/heatmaps[:,:,1].max())
         plotter.add_histogram('r_obs', heatmaps[:, :, 2]/heatmaps[:,:,2].max())
 
-        plotter.add_histogram('0', palm_conv[:, :, 0])
-        plotter.add_histogram('1', palm_conv[:, :, 1])
-        plotter.add_histogram('2', palm_conv[:, :, 2])
-        plotter.add_histogram('3', palm_conv[:, :, 3])
-        plotter.add_histogram('4', palm_conv[:, :, 4])
-        plotter.add_histogram('5', palm_conv[:, :, 5])
+        plotter.add_histogram('0', palm_conv[0, :, :])
+        plotter.add_histogram('1', palm_conv[1, :, :])
+        plotter.add_histogram('2', palm_conv[2, :, :])
+        plotter.add_histogram('3', palm_conv[3, :, :])
+        plotter.add_histogram('4', palm_conv[4, :, :])
+        plotter.add_histogram('5', palm_conv[5, :, :])
 
 
 
