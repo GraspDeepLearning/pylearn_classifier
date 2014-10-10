@@ -8,10 +8,10 @@ CROP_BORDER_DIM = 15
 
 DATA_SIZES = dict(rgbd_data=(900, 480, 640, 4),
                   rgbd_data_normalized=(900, 480, 640, 4),
-                  extracted_features=(900, 64, 84, 64),
-                  heatmaps=(900, 64, 84, 3),
-                  normalized_heatmaps=(900, 64, 84, 3),
-                  cropped_heatmaps=(900, 34, 54, 3),
+                  extracted_features=(900, 52, 72, 64),
+                  heatmaps=(900, 52, 72, 3),
+                  normalized_heatmaps=(900, 52, 72, 3),
+                  #cropped_heatmaps=(900, 34, 54, 3),
                   convolved_heatmaps=(900, 381, 541, 3),
                   independent_grasp_points=(900, 3, 480, 640, 3),
                   dependent_grasp_points=(900, 3, 480, 640, 3)
@@ -19,10 +19,10 @@ DATA_SIZES = dict(rgbd_data=(900, 480, 640, 4),
 
 CHUNK_SIZES = dict(rgbd_data=(10, 480, 640, 4),
                    rgbd_data_normalized=(10, 480, 640, 4),
-                   extracted_features=(10, 64, 84, 64),
-                   heatmaps=(10, 64, 84, 3),
-                   normalized_heatmaps=(10, 64, 84, 3),
-                   cropped_heatmaps=(10, 34, 54, 3),
+                   extracted_features=(10, 52, 72, 64),
+                   heatmaps=(10, 52, 72, 3),
+                   normalized_heatmaps=(10, 52, 72, 3),
+                   #cropped_heatmaps=(10, 34, 54, 3),
                    convolved_heatmaps=(10, 381, 541, 3),
                    independent_grasp_points=(10, 3, 480, 640, 3),
                    dependent_grasp_points=(10, 3, 480, 640, 3)
@@ -62,10 +62,10 @@ def main():
     pipeline.add_stage(FeatureExtraction(conv_model_filepath, useFloat64=False))
     pipeline.add_stage(Classification(conv_model_filepath))
     pipeline.add_stage(Normalization())
-    pipeline.add_stage(Crop(CROP_BORDER_DIM))
+    #pipeline.add_stage(Crop(CROP_BORDER_DIM))
     pipeline.add_stage(ConvolvePriors(priors_filepath))
     pipeline.add_stage(CalculateTopFive(input_key='convolved_heatmaps', output_key='dependent_grasp_points'))
-    pipeline.add_stage(CalculateTopFive(input_key='cropped_heatmaps', output_key='independent_grasp_points'))
+    pipeline.add_stage(CalculateTopFive(input_key='normalized_heatmaps', output_key='independent_grasp_points'))
 
     pipeline.run()
 

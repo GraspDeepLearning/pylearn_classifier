@@ -54,8 +54,8 @@ class FeatureExtraction():
         cnn_model.layers = cnn_model.layers[0:-1]
 
         #we want to padd zeros around the edges rather than ignoring edge pixels
-        for i in range(len(cnn_model.layers)):
-            cnn_model.layers[i].border_mode = "full"
+        #for i in range(len(cnn_model.layers)):
+        #    cnn_model.layers[i].border_mode = "full"
 
         cnn_model.set_batch_size(1)
         cnn_model.set_input_space(new_space)
@@ -166,25 +166,42 @@ class ConvolvePriors():
 
     def run(self, dataset, index):
 
-        heatmaps = dataset['cropped_heatmaps'][index]
+        heatmaps = dataset['normalized_heatmaps'][index]
+        shape = (480,640)
+        l_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 0], shape)
+        palm_obs = scipy.misc.imresize(heatmaps[:, :, 1], shape)
+        r_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 2], shape)
+        
+        shape2 = (381,541)
+        l_gripper_obs2 = scipy.misc.imresize(heatmaps[:, :, 0], shape2)
+        palm_obs2 = scipy.misc.imresize(heatmaps[:, :, 1], shape2)
+        r_gripper_obs2 = scipy.misc.imresize(heatmaps[:, :, 2], shape2)
 
-        l_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 0], (480, 640))
-        palm_obs = scipy.misc.imresize(heatmaps[:, :, 1], (480, 640))
-        r_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 2], (480, 640))
-
-        img_in = np.zeros((1, 1, 480, 640), dtype=np.float32)
+        img_in = np.zeros((1, 1, shape[0], shape[1]), dtype=np.float32)
 
         img_in[:, :] = l_gripper_obs
-        out = self.f(img_in)
-        l_gripper_out = out[0, 0] * out[0, 1]
+        l_gripper_conv = self.f(img_in)
 
         img_in[:, :] = r_gripper_obs
-        out = self.f(img_in)
-        r_gripper_out = out[0, 4] * out[0, 5]
+        r_gripper_conv = self.f(img_in)
 
         img_in[:, :] = palm_obs
-        out = self.f(img_in)
-        palm_out = out[0, 2] * out[0, 3]
+        palm_conv = self.f(img_in)
+
+        l_gripper_out = l_gripper_obs2 * palm_conv[0,2] * r_gripper_conv[0,4]  
+        palm_out = palm_obs2 * l_gripper_conv[0,0] * r_gripper_conv[0,5] 
+        r_gripper_out = r_gripper_obs2 * l_gripper_conv[0,1] *palm_conv[0,3]
+        #img_in[:, :] = l_gripper_obs
+        #out = self.f(img_in)
+        #l_gripper_out = out[0, 0] * out[0, 1]
+
+        #img_in[:, :] = r_gripper_obs
+        #out = self.f(img_in)
+        #r_gripper_out = out[0, 4] * out[0, 5]
+
+        #img_in[:, :] = palm_obs
+        #out = self.f(img_in)
+        #palm_out = out[0, 2] * out[0, 3]
 
         out = np.zeros((381, 541, 3))
         out[:, :, 0] = l_gripper_out
@@ -206,7 +223,7 @@ class CalculateTopFive():
     def get_local_minima(self, output):
         output2 = np.copy(output)
         e = np.zeros(output2.shape)
-        extrema = argrelextrema(output2, np.less)
+        extrema = argrelextrema(output2, np.greater)
         for i in range(len(extrema[0])):
             e[extrema[0][i], extrema[1][i]] = output[extrema[0][i], extrema[1][i]]
 
@@ -247,6 +264,7 @@ class CalculateTopFive():
 
 
             local_minima = self.get_local_minima_above_threshold(heatmap)
+            local_minima = self.get_local_minima(heatmap)
             scaled_extremas = self.get_scaled_extremas(rgbd_img, heatmap, local_minima)
 
             extrema_dict = dict((e, i)
@@ -255,7 +273,7 @@ class CalculateTopFive():
 
             sorted_extremas = sorted(extrema_dict, key=lambda key: key, reverse=True)
 
-            for j, extrema in enumerate(sorted_extremas[-5:]):
+            for j, extrema in enumerate(sorted_extremas[-20:]):
 
                 max_extrema = extrema_dict[extrema]
                 heat_val = (j * 254 / 5)
