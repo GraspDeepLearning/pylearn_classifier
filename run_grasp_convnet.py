@@ -13,6 +13,9 @@ DATA_SIZES = dict(rgbd_data=(900, 480, 640, 4),
                   normalized_heatmaps=(900, 52, 72, 3),
                   #cropped_heatmaps=(900, 34, 54, 3),
                   convolved_heatmaps=(900, 381, 541, 3),
+                  l_convolved_heatmaps=(10, 381, 541, 6),
+                  p_convolved_heatmaps=(900, 381, 541, 6),
+                  r_convolved_heatmaps=(900, 381, 541, 6),
                   independent_grasp_points=(900, 3, 480, 640, 3),
                   dependent_grasp_points=(900, 3, 480, 640, 3)
                   )
@@ -24,6 +27,9 @@ CHUNK_SIZES = dict(rgbd_data=(10, 480, 640, 4),
                    normalized_heatmaps=(10, 52, 72, 3),
                    #cropped_heatmaps=(10, 34, 54, 3),
                    convolved_heatmaps=(10, 381, 541, 3),
+                   l_convolved_heatmaps=(10, 381, 541, 6),
+                   p_convolved_heatmaps=(10, 381, 541, 6),
+                   r_convolved_heatmaps=(10, 381, 541, 6),
                    independent_grasp_points=(10, 3, 480, 640, 3),
                    dependent_grasp_points=(10, 3, 480, 640, 3)
                    )

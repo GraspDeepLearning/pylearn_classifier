@@ -181,12 +181,15 @@ class ConvolvePriors():
 
         img_in[:, :] = l_gripper_obs
         l_gripper_conv = self.f(img_in)
+        dataset["l_convolved_heatmaps"][index] = l_gripper_conv
 
         img_in[:, :] = r_gripper_obs
         r_gripper_conv = self.f(img_in)
+        dataset["r_convolved_heatmaps"][index] = r_gripper_conv
 
         img_in[:, :] = palm_obs
         palm_conv = self.f(img_in)
+        dataset["p_convolved_heatmaps"][index] = palm_conv
 
         l_gripper_out = l_gripper_obs2 * palm_conv[0, 2] * r_gripper_conv[0, 4]
         palm_out = palm_obs2 * l_gripper_conv[0, 0] * r_gripper_conv[0, 5]
