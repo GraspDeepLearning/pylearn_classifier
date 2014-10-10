@@ -96,17 +96,17 @@ def main():
         plotter.add_histogram('p_obs', heatmaps[:, :, 1]/heatmaps[:,:,1].max())
         plotter.add_histogram('r_obs', heatmaps[:, :, 2]/heatmaps[:,:,2].max())
 
-        plotter.add_subplot('l_independent', indepent_grasp_points[0, :, :, :])
-        plotter.add_subplot('p_independent', indepent_grasp_points[1, :, :, :])
-        plotter.add_subplot('r_independent', indepent_grasp_points[2, :, :, :])
+        #plotter.add_subplot('l_independent', indepent_grasp_points[0, :, :, :])
+        #plotter.add_subplot('p_independent', indepent_grasp_points[1, :, :, :])
+        #plotter.add_subplot('r_independent', indepent_grasp_points[2, :, :, :])
 
         plotter.add_subplot('l_convolved', convolved_heatmaps[:, :, 0])
         plotter.add_subplot('p_convolved', convolved_heatmaps[:, :, 1])
         plotter.add_subplot('r_convolved', convolved_heatmaps[:, :, 2])
 
-        plotter.add_subplot('l_dependent', dependent_grasp_points[0, :, :, :])
-        plotter.add_subplot('p_dependent', dependent_grasp_points[1, :, :, :])
-        plotter.add_subplot('r_dependent', dependent_grasp_points[2, :, :, :])
+        #plotter.add_subplot('l_dependent', dependent_grasp_points[0, :, :, :])
+        #plotter.add_subplot('p_dependent', dependent_grasp_points[1, :, :, :])
+        #plotter.add_subplot('r_dependent', dependent_grasp_points[2, :, :, :])
 
         plotter.show()
 

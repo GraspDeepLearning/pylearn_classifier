@@ -64,8 +64,8 @@ def main():
     pipeline.add_stage(Normalization())
     #pipeline.add_stage(Crop(CROP_BORDER_DIM))
     pipeline.add_stage(ConvolvePriors(priors_filepath))
-    pipeline.add_stage(CalculateTopFive(input_key='convolved_heatmaps', output_key='dependent_grasp_points'))
-    pipeline.add_stage(CalculateTopFive(input_key='normalized_heatmaps', output_key='independent_grasp_points'))
+    #pipeline.add_stage(CalculateTopFive(input_key='convolved_heatmaps', output_key='dependent_grasp_points'))
+    #pipeline.add_stage(CalculateTopFive(input_key='normalized_heatmaps', output_key='independent_grasp_points'))
 
     pipeline.run()
 

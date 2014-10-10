@@ -167,15 +167,15 @@ class ConvolvePriors():
     def run(self, dataset, index):
 
         heatmaps = dataset['normalized_heatmaps'][index]
-        shape = (480,640)
+        shape = (480, 640)
         l_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 0], shape)
         palm_obs = scipy.misc.imresize(heatmaps[:, :, 1], shape)
         r_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 2], shape)
         
-        shape2 = (381,541)
-        l_gripper_obs2 = scipy.misc.imresize(heatmaps[:, :, 0], shape2)
-        palm_obs2 = scipy.misc.imresize(heatmaps[:, :, 1], shape2)
-        r_gripper_obs2 = scipy.misc.imresize(heatmaps[:, :, 2], shape2)
+        shape2 = (381, 541)
+        l_gripper_obs2 = l_gripper_obs[(480-381)/2:-(480-381)/2, (640-541)/2:-(640-541)/2]
+        palm_obs2 = palm_obs[(480-381)/2:-(480-381)/2, (640-541)/2:-(640-541)/2]
+        r_gripper_obs2 = r_gripper_obs[(480-381)/2:-(480-381)/2, (640-541)/2:-(640-541)/2]
 
         img_in = np.zeros((1, 1, shape[0], shape[1]), dtype=np.float32)
 
@@ -188,20 +188,9 @@ class ConvolvePriors():
         img_in[:, :] = palm_obs
         palm_conv = self.f(img_in)
 
-        l_gripper_out = l_gripper_obs2 * palm_conv[0,2] * r_gripper_conv[0,4]  
-        palm_out = palm_obs2 * l_gripper_conv[0,0] * r_gripper_conv[0,5] 
-        r_gripper_out = r_gripper_obs2 * l_gripper_conv[0,1] *palm_conv[0,3]
-        #img_in[:, :] = l_gripper_obs
-        #out = self.f(img_in)
-        #l_gripper_out = out[0, 0] * out[0, 1]
-
-        #img_in[:, :] = r_gripper_obs
-        #out = self.f(img_in)
-        #r_gripper_out = out[0, 4] * out[0, 5]
-
-        #img_in[:, :] = palm_obs
-        #out = self.f(img_in)
-        #palm_out = out[0, 2] * out[0, 3]
+        l_gripper_out = l_gripper_obs2 * palm_conv[0, 2] * r_gripper_conv[0, 4]
+        palm_out = palm_obs2 * l_gripper_conv[0, 0] * r_gripper_conv[0, 5]
+        r_gripper_out = r_gripper_obs2 * l_gripper_conv[0, 1] * palm_conv[0, 3]
 
         out = np.zeros((381, 541, 3))
         out[:, :, 0] = l_gripper_out
