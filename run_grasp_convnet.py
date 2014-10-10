@@ -26,7 +26,7 @@ CHUNK_SIZES = dict(rgbd_data=(10, 480, 640, 4),
                    heatmaps=(10, 52, 72, 3),
                    normalized_heatmaps=(10, 52, 72, 3),
                    #cropped_heatmaps=(10, 34, 54, 3),
-                   convolved_heatmaps=(10, 6, 381, 541, 3),
+                   convolved_heatmaps=(10, 381, 541, 3),
                    l_convolved_heatmaps=(10, 6, 381, 541),
                    p_convolved_heatmaps=(10, 6, 381, 541),
                    r_convolved_heatmaps=(10, 6, 381, 541),
@@ -45,6 +45,7 @@ def init_save_file(input_data_file, input_model_file):
     dataset = h5py.File(dataset_filepath)
 
     for key in DATA_SIZES.keys():
+        print key
         dataset.create_dataset(key, DATA_SIZES[key], chunks=CHUNK_SIZES[key])
 
     return dataset_filepath
