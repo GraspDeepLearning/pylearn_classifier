@@ -122,17 +122,6 @@ class Normalization():
         dataset['normalized_heatmaps'][index] = normalize_heatmaps
 
 
-class Crop():
-
-    def __init__(self, border_dim=15):
-        self.border_dim = border_dim
-
-    def run(self, dataset, index):
-        heatmaps = dataset['normalized_heatmaps'][index]
-        cropped_heatmaps = heatmaps[self.border_dim:-self.border_dim, self.border_dim:-self.border_dim]
-        dataset['cropped_heatmaps'][index] = cropped_heatmaps
-
-
 class ConvolvePriors():
 
     def __init__(self, priors_filepath):
@@ -201,6 +190,54 @@ class ConvolvePriors():
         out[:, :, 2] = r_gripper_out
 
         dataset['convolved_heatmaps'][index] = out
+
+
+class CalculateMax():
+
+    def run(self, dataset, index):
+
+        out_shape =  dataset['convolved_heatmaps'][index][:, :, 0].shape
+        l_gripper_out = dataset['convolved_heatmaps'][index][:, :, 0]
+        palm_out = dataset['convolved_heatmaps'][index][:, :, 1]
+        r_gripper_out = dataset['convolved_heatmaps'][index][:, :, 2]
+        rgb_with_grasp = dataset['best_grasp'][index]
+
+        rgb_with_grasp[:] = np.copy(dataset["rgbd_data"][index, 50:-49, 50:-49, 0:3])
+
+        l_max = np.argmax(l_gripper_out)
+        p_max = np.argmax(palm_out)
+        r_max = np.argmax(r_gripper_out)
+
+        lim = 541
+        l_max_x, l_max_y = (l_max / 541, l_max % 541)
+        p_max_x, p_max_y = (p_max / 541, p_max % 541)
+        r_max_x, r_max_y = (r_max / 541, r_max % 541)
+
+        rgb_with_grasp[l_max_x-5:l_max_x + 5, l_max_y-5:l_max_y + 5] = [0, 0, 0]
+        rgb_with_grasp[p_max_x-5:p_max_x + 5, p_max_y-5:p_max_y + 5] = [0, 0, 0]
+        rgb_with_grasp[r_max_x-5:r_max_x + 5, r_max_y-5:r_max_y + 5] = [0, 0, 0]
+
+        # print (l_max / 541, l_max % 541)
+        # print (p_max / 541, p_max % 541)
+        # print (r_max / 541, r_max % 541)
+
+        # plt.imshow(rgb)
+        # plt.show()
+
+        # l_gripper_out[l_max_x-5:l_max_x + 5, l_max_y-5:l_max_y + 5] = 0
+        # plt.imshow(l_gripper_out)
+        # plt.show()
+        #
+        # palm_out[p_max_x-5:p_max_x + 5, p_max_y-5:p_max_y + 5] = 0
+        # plt.imshow(palm_out)
+        # plt.show()
+        #
+        # r_gripper_out[r_max_x-5:r_max_x + 5, r_max_y-5:r_max_y + 5] = 0
+        # plt.imshow(r_gripper_out)
+        # plt.show()
+
+
+
 
 
 class CalculateTopFive():

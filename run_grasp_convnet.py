@@ -4,15 +4,14 @@ from grasp_classification_pipeline import *
 import paths
 import os
 
-CROP_BORDER_DIM = 15
 
 DATA_SIZES = dict(rgbd_data=(900, 480, 640, 4),
                   rgbd_data_normalized=(900, 480, 640, 4),
                   extracted_features=(900, 52, 72, 64),
                   heatmaps=(900, 52, 72, 3),
                   normalized_heatmaps=(900, 52, 72, 3),
-                  #cropped_heatmaps=(900, 34, 54, 3),
                   convolved_heatmaps=(900, 381, 541, 3),
+                  best_grasp=(900, 381, 541, 3),
                   l_convolved_heatmaps=(900, 6, 381, 541),
                   p_convolved_heatmaps=(900, 6, 381, 541),
                   r_convolved_heatmaps=(900, 6, 381, 541),
@@ -25,8 +24,8 @@ CHUNK_SIZES = dict(rgbd_data=(10, 480, 640, 4),
                    extracted_features=(10, 52, 72, 64),
                    heatmaps=(10, 52, 72, 3),
                    normalized_heatmaps=(10, 52, 72, 3),
-                   #cropped_heatmaps=(10, 34, 54, 3),
                    convolved_heatmaps=(10, 381, 541, 3),
+                   best_grasp=(10, 381, 541, 3),
                    l_convolved_heatmaps=(10, 6, 381, 541),
                    p_convolved_heatmaps=(10, 6, 381, 541),
                    r_convolved_heatmaps=(10, 6, 381, 541),
@@ -44,9 +43,15 @@ def init_save_file(input_data_file, input_model_file):
 
     dataset = h5py.File(dataset_filepath)
 
+    print
+    print "Initing Dataset with: "
+    print
+
     for key in DATA_SIZES.keys():
-        print key
+        print str(key) + " shape=" + str(DATA_SIZES[key]) + " chunks=" + str(CHUNK_SIZES[key])
         dataset.create_dataset(key, DATA_SIZES[key], chunks=CHUNK_SIZES[key])
+
+    print
 
     return dataset_filepath
 
@@ -69,8 +74,8 @@ def main():
     pipeline.add_stage(FeatureExtraction(conv_model_filepath, useFloat64=False))
     pipeline.add_stage(Classification(conv_model_filepath))
     pipeline.add_stage(Normalization())
-    #pipeline.add_stage(Crop(CROP_BORDER_DIM))
     pipeline.add_stage(ConvolvePriors(priors_filepath))
+    pipeline.add_stage(CalculateMax())
     #pipeline.add_stage(CalculateTopFive(input_key='convolved_heatmaps', output_key='dependent_grasp_points'))
     #pipeline.add_stage(CalculateTopFive(input_key='normalized_heatmaps', output_key='independent_grasp_points'))
 

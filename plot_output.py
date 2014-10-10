@@ -85,11 +85,13 @@ def main():
         palm_conv = dataset["p_convolved_heatmaps"][i]
         l_conv = dataset["l_convolved_heatmaps"][i]
         r_conv = dataset["r_convolved_heatmaps"][i]
+        best_grasp = dataset["best_grasp"][i]
 
         plotter1 = Plotter(1)
 
         plotter1.add_subplot('rgb', rgbd_img[:, :, 0:3])
         plotter1.add_subplot('d', rgbd_img[:, :, 3])
+        plotter1.add_subplot('best_grasp', best_grasp)
 
         plotter2 = Plotter(2)
 
