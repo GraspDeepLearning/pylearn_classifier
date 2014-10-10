@@ -110,6 +110,30 @@ def main():
         plotter2.add_subplot('r_g_l * l_grip', l_conv[4, :, :])
         plotter2.add_subplot('r_convolved', convolved_heatmaps[:, :, 2])
 
+        p_to_f_dist = 10
+        l = heatmaps[:, p_to_f_dist*2:, 0]
+        p = heatmaps[:, p_to_f_dist:-p_to_f_dist, 1]
+        r = heatmaps[:, :-p_to_f_dist*2, 2]
+
+        out = l * p * r
+
+        plotter1.add_subplot("out", out)
+
+        out_max = np.argmax(out)
+        out_x, out_y = (out_max / out.shape[1], out_max % out.shape[1])
+
+        out_max_plot = np.copy(out)
+
+        print out_max_plot.shape
+        print out_x
+        print out_y
+        out_max_plot[out_x-5:out_x+5, out_y-5:out_y+5] = 0
+
+        plotter1.add_subplot("out_max", out_max_plot)
+
+        #import IPython
+        #IPython.embed()
+
         #plotter.add_histogram('l_obs', heatmaps[:, :, 0]/heatmaps[:,:,0].max())
         #plotter.add_histogram('p_obs', heatmaps[:, :, 1]/heatmaps[:,:,1].max())
         #plotter.add_histogram('r_obs', heatmaps[:, :, 2]/heatmaps[:,:,2].max())
