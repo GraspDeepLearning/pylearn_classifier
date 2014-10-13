@@ -5,11 +5,39 @@ import paths
 import os
 
 
+# DATA_SIZES = dict(rgbd_data=(900, 480, 640, 4),
+#                   rgbd_data_normalized=(900, 480, 640, 4),
+#                   extracted_features=(900, 52, 72, 64),
+#                   heatmaps=(900, 52, 72, 3),
+#                   normalized_heatmaps=(900, 52, 72, 3),
+#                   convolved_heatmaps=(900,  317, 477, 3),
+#                   best_grasp=(900, 317, 477, 3),
+#                   l_convolved_heatmaps=(900, 6, 317, 477),
+#                   p_convolved_heatmaps=(900, 6, 317, 477),
+#                   r_convolved_heatmaps=(900, 6,  317, 477),
+#                   independent_grasp_points=(900, 3, 480, 640, 3),
+#                   dependent_grasp_points=(900, 3, 480, 640, 3)
+#                   )
+#
+# CHUNK_SIZES = dict(rgbd_data=(10, 480, 640, 4),
+#                    rgbd_data_normalized=(10, 480, 640, 4),
+#                    extracted_features=(10, 52, 72, 64),
+#                    heatmaps=(10, 52, 72, 3),
+#                    normalized_heatmaps=(10, 52, 72, 3),
+#                    convolved_heatmaps=(10,  317, 477, 3),
+#                    best_grasp=(10,  317, 477, 3),
+#                    l_convolved_heatmaps=(10, 6,  317, 477),
+#                    p_convolved_heatmaps=(10, 6, 317, 477),
+#                    r_convolved_heatmaps=(10, 6,  317, 477),
+#                    independent_grasp_points=(10, 3, 480, 640, 3),
+#                    dependent_grasp_points=(10, 3, 480, 640, 3)
+#                    )
+
 DATA_SIZES = dict(rgbd_data=(900, 480, 640, 4),
                   rgbd_data_normalized=(900, 480, 640, 4),
-                  extracted_features=(900, 52, 72, 64),
-                  heatmaps=(900, 52, 72, 3),
-                  normalized_heatmaps=(900, 52, 72, 3),
+                  extracted_features=(900, 11, 16, 256),
+                  heatmaps=(900, 11, 16, 3),
+                  normalized_heatmaps=(900, 11, 16, 3),
                   convolved_heatmaps=(900,  317, 477, 3),
                   best_grasp=(900, 317, 477, 3),
                   l_convolved_heatmaps=(900, 6, 317, 477),
@@ -21,9 +49,9 @@ DATA_SIZES = dict(rgbd_data=(900, 480, 640, 4),
 
 CHUNK_SIZES = dict(rgbd_data=(10, 480, 640, 4),
                    rgbd_data_normalized=(10, 480, 640, 4),
-                   extracted_features=(10, 52, 72, 64),
-                   heatmaps=(10, 52, 72, 3),
-                   normalized_heatmaps=(10, 52, 72, 3),
+                   extracted_features=(10, 11, 16, 64),
+                   heatmaps=(10, 11, 16, 3),
+                   normalized_heatmaps=(10, 11, 16, 3),
                    convolved_heatmaps=(10,  317, 477, 3),
                    best_grasp=(10,  317, 477, 3),
                    l_convolved_heatmaps=(10, 6,  317, 477),
