@@ -156,17 +156,12 @@ class ConvolvePriors():
     def run(self, dataset, index):
 
         heatmaps = dataset['normalized_heatmaps'][index]
-        shape = (480, 640)
-        l_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 0], shape)
-        palm_obs = scipy.misc.imresize(heatmaps[:, :, 1], shape)
-        r_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 2], shape)
-        
-        shape2 = (381, 541)
-        l_gripper_obs2 = l_gripper_obs[(480-381)/2:-(480-381)/2, (640-541)/2:-(640-541)/2]
-        palm_obs2 = palm_obs[(480-381)/2:-(480-381)/2, (640-541)/2:-(640-541)/2]
-        r_gripper_obs2 = r_gripper_obs[(480-381)/2:-(480-381)/2, (640-541)/2:-(640-541)/2]
+        img_in_shape = (416, 576)
+        l_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 0], img_in_shape)
+        palm_obs = scipy.misc.imresize(heatmaps[:, :, 1], img_in_shape)
+        r_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 2], img_in_shape)
 
-        img_in = np.zeros((1, 1, shape[0], shape[1]), dtype=np.float32)
+        img_in = np.zeros((1, 1, img_in_shape[0], img_in_shape[1]), dtype=np.float32)
 
         img_in[:, :] = l_gripper_obs
         l_gripper_conv = self.f(img_in)
@@ -180,61 +175,56 @@ class ConvolvePriors():
         palm_conv = self.f(img_in)
         dataset["p_convolved_heatmaps"][index] = palm_conv
 
+        out_shape = palm_conv[0, 0].shape
+        x_border = (img_in_shape[0]-out_shape[0])/2
+        y_border = (img_in_shape[1]-out_shape[1])/2
+        l_gripper_obs2 = l_gripper_obs[x_border:-x_border - 1, y_border:-y_border - 1]
+        palm_obs2 = palm_obs[x_border:-x_border - 1, y_border:-y_border - 1]
+        r_gripper_obs2 = r_gripper_obs[x_border:-x_border - 1, y_border:-y_border - 1]
+
         l_gripper_out = l_gripper_obs2 * palm_conv[0, 0] * r_gripper_conv[0, 1]
         palm_out = palm_obs2 * l_gripper_conv[0, 2] * r_gripper_conv[0, 3]
         r_gripper_out = r_gripper_obs2 * l_gripper_conv[0, 4] * palm_conv[0, 5]
 
-        out = np.zeros((381, 541, 3))
-        out[:, :, 0] = l_gripper_out
-        out[:, :, 1] = palm_out
-        out[:, :, 2] = r_gripper_out
-
-        dataset['convolved_heatmaps'][index] = out
+        dataset['convolved_heatmaps'][index, :, :, 0] = l_gripper_out
+        dataset['convolved_heatmaps'][index, :, :, 1] = palm_out
+        dataset['convolved_heatmaps'][index, :, :, 2] = r_gripper_out
 
 
 class CalculateMax():
 
+
     def run(self, dataset, index):
 
-        out_shape =  dataset['convolved_heatmaps'][index][:, :, 0].shape
+        out_shape = dataset['convolved_heatmaps'][index][:, :, 0].shape
         l_gripper_out = dataset['convolved_heatmaps'][index][:, :, 0]
         palm_out = dataset['convolved_heatmaps'][index][:, :, 1]
         r_gripper_out = dataset['convolved_heatmaps'][index][:, :, 2]
         rgb_with_grasp = dataset['best_grasp'][index]
 
-        rgb_with_grasp[:] = np.copy(dataset["rgbd_data"][index, 50:-49, 50:-49, 0:3])
+        img_in_shape = dataset["rgbd_data"][index, :, :, 0].shape
+        x_border = (img_in_shape[0]-out_shape[0])/2
+        y_border = (img_in_shape[1]-out_shape[1])/2
+
+        rgb_with_grasp[:] = np.copy(dataset["rgbd_data"][index, x_border:-x_border - 1, y_border:-y_border - 1, 0:3])
 
         l_max = np.argmax(l_gripper_out)
         p_max = np.argmax(palm_out)
         r_max = np.argmax(r_gripper_out)
 
-        lim = 541
-        l_max_x, l_max_y = (l_max / 541, l_max % 541)
-        p_max_x, p_max_y = (p_max / 541, p_max % 541)
-        r_max_x, r_max_y = (r_max / 541, r_max % 541)
+        lim = out_shape[1]
+        l_max_x, l_max_y = (l_max / lim, l_max % lim)
+        p_max_x, p_max_y = (p_max / lim, p_max % lim)
+        r_max_x, r_max_y = (r_max / lim, r_max % lim)
 
-        rgb_with_grasp[l_max_x-5:l_max_x + 5, l_max_y-5:l_max_y + 5] = [0, 0, 0]
-        rgb_with_grasp[p_max_x-5:p_max_x + 5, p_max_y-5:p_max_y + 5] = [0, 0, 0]
-        rgb_with_grasp[r_max_x-5:r_max_x + 5, r_max_y-5:r_max_y + 5] = [0, 0, 0]
+        try:
+            rgb_with_grasp[l_max_x-5:l_max_x + 5, l_max_y-5:l_max_y + 5] = [0, 0, 0]
+            rgb_with_grasp[p_max_x-5:p_max_x + 5, p_max_y-5:p_max_y + 5] = [0, 0, 0]
+            rgb_with_grasp[r_max_x-5:r_max_x + 5, r_max_y-5:r_max_y + 5] = [0, 0, 0]
+        except:
+            pass
 
-        # print (l_max / 541, l_max % 541)
-        # print (p_max / 541, p_max % 541)
-        # print (r_max / 541, r_max % 541)
-
-        # plt.imshow(rgb)
-        # plt.show()
-
-        # l_gripper_out[l_max_x-5:l_max_x + 5, l_max_y-5:l_max_y + 5] = 0
-        # plt.imshow(l_gripper_out)
-        # plt.show()
-        #
-        # palm_out[p_max_x-5:p_max_x + 5, p_max_y-5:p_max_y + 5] = 0
-        # plt.imshow(palm_out)
-        # plt.show()
-        #
-        # r_gripper_out[r_max_x-5:r_max_x + 5, r_max_y-5:r_max_y + 5] = 0
-        # plt.imshow(r_gripper_out)
-        # plt.show()
+        dataset['best_grasp'][index] = rgb_with_grasp
 
 
 
