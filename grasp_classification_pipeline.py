@@ -200,7 +200,7 @@ class CalculateMax():
         l_gripper_out = dataset['convolved_heatmaps'][index][:, :, 0]
         palm_out = dataset['convolved_heatmaps'][index][:, :, 1]
         r_gripper_out = dataset['convolved_heatmaps'][index][:, :, 2]
-        rgb_with_grasp = dataset['best_grasp'][index]
+        rgb_with_grasp = dataset["best_grasp"][index]
 
         img_in_shape = dataset["rgbd_data"][index, :, :, 0].shape
         x_border = (img_in_shape[0]-out_shape[0])/2
@@ -225,6 +225,7 @@ class CalculateMax():
             pass
 
         dataset['best_grasp'][index] = rgb_with_grasp
+
 
 
 
