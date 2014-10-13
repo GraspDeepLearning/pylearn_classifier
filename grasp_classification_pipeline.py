@@ -200,9 +200,8 @@ class CalculateMax():
         l_gripper_out = dataset['convolved_heatmaps'][index][:, :, 0]
         palm_out = dataset['convolved_heatmaps'][index][:, :, 1]
         r_gripper_out = dataset['convolved_heatmaps'][index][:, :, 2]
-        rgb_with_grasp = dataset['best_grasp'][index]
 
-        rgb_with_grasp[:] = np.copy(dataset["rgbd_data"][index, 50:-49, 50:-49, 0:3])
+        rgb_with_grasp = np.copy(dataset["rgbd_data"][index, 50:-49, 50:-49, 0:3])
 
         l_max = np.argmax(l_gripper_out)
         p_max = np.argmax(palm_out)
@@ -216,7 +215,8 @@ class CalculateMax():
         rgb_with_grasp[l_max_x-5:l_max_x + 5, l_max_y-5:l_max_y + 5] = [0, 0, 0]
         rgb_with_grasp[p_max_x-5:p_max_x + 5, p_max_y-5:p_max_y + 5] = [0, 0, 0]
         rgb_with_grasp[r_max_x-5:r_max_x + 5, r_max_y-5:r_max_y + 5] = [0, 0, 0]
-
+        
+        dataset['best_grasp'][index] = rgb_with_grasp
         # print (l_max / 541, l_max % 541)
         # print (p_max / 541, p_max % 541)
         # print (r_max / 541, r_max % 541)
