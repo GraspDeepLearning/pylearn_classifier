@@ -227,7 +227,9 @@ class MakeC01B(preprocessing.Preprocessor):
 
             print data_label
             num_images = dataset[data_label].shape[0]
-            dataset.create_dataset("c01b_" + data_label, (4, 72, 72, num_images), chunks=(4, 72, 72, 4))
+            x_dim = dataset[data_label].shape[1]
+            y_dim = dataset[data_label].shape[2]
+            dataset.create_dataset("c01b_" + data_label, (4, x_dim, y_dim, num_images), chunks=(4, x_dim, y_dim, 4))
             dataset["c01b_" + y_label] = dataset[y_label]
 
             for i in range(num_images):
