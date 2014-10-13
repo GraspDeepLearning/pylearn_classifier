@@ -34,7 +34,7 @@ if __name__ == "__main__":
     raw_rgbd_filepath = paths.RAW_TRAINING_DATASET_DIR + raw_rgbd_datafile
 
     preprocess_attribs = dict(sets=("train", "test", "valid"),
-                              patch_shape=(72, 72),
+                              patch_shape=(170, 170),
                               raw_filepath=raw_rgbd_filepath,
                               output_filepath=paths.PROCESSED_TRAINING_DATASET_DIR + 'processed_' + raw_rgbd_datafile)
 
