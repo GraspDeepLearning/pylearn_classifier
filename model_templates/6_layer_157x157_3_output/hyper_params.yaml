@@ -1,0 +1,6 @@
+batch_size: 20
+output_channels_h0: 128
+output_channels_h1: 128
+output_channels_h2: 128
+output_channels_h3: 128
+max_epochs: 10000
