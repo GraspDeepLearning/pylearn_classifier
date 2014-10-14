@@ -33,11 +33,11 @@ import os
 #                    dependent_grasp_points=(10, 3, 480, 640, 3)
 #                    )
 
-DATA_SIZES = dict(rgbd_data=(900, 480, 640, 4),
-                  rgbd_data_normalized=(900, 480, 640, 4),
-                  extracted_features=(900, 11, 16, 256),
-                  heatmaps=(900, 11, 16, 3),
-                  normalized_heatmaps=(900, 11, 16, 3),
+DATA_SIZES = dict(rgbd_data=(900, 1024, 1280, 1),
+                  rgbd_data_normalized=(900,1024, 1280, 1),
+                  extracted_features=(900, 28, 36, 256),
+                  heatmaps=(900, 28, 36, 3),
+                  normalized_heatmaps=(900, 28, 36, 3),
                   convolved_heatmaps=(900,  317, 477, 3),
                   best_grasp=(900, 317, 477, 3),
                   l_convolved_heatmaps=(900, 6, 317, 477),
@@ -47,11 +47,11 @@ DATA_SIZES = dict(rgbd_data=(900, 480, 640, 4),
                   dependent_grasp_points=(900, 3, 480, 640, 3)
                   )
 
-CHUNK_SIZES = dict(rgbd_data=(10, 480, 640, 4),
-                   rgbd_data_normalized=(10, 480, 640, 4),
-                   extracted_features=(10, 11, 16, 64),
-                   heatmaps=(10, 11, 16, 3),
-                   normalized_heatmaps=(10, 11, 16, 3),
+CHUNK_SIZES = dict(rgbd_data=(10,1024, 1280, 1),
+                   rgbd_data_normalized=(10, 1024, 1280, 1),
+                   extracted_features=(10, 28, 36, 64),
+                   heatmaps=(10, 28, 36, 3),
+                   normalized_heatmaps=(10, 28, 36, 3),
                    convolved_heatmaps=(10,  317, 477, 3),
                    best_grasp=(10,  317, 477, 3),
                    l_convolved_heatmaps=(10, 6,  317, 477),
@@ -102,8 +102,8 @@ def main():
     pipeline.add_stage(FeatureExtraction(conv_model_filepath, useFloat64=False))
     pipeline.add_stage(Classification(conv_model_filepath))
     pipeline.add_stage(Normalization())
-    pipeline.add_stage(ConvolvePriors(priors_filepath))
-    pipeline.add_stage(CalculateMax())
+    #pipeline.add_stage(ConvolvePriors(priors_filepath))
+    #pipeline.add_stage(CalculateMax())
     #pipeline.add_stage(CalculateTopFive(input_key='convolved_heatmaps', output_key='dependent_grasp_points'))
     #pipeline.add_stage(CalculateTopFive(input_key='normalized_heatmaps', output_key='independent_grasp_points'))
 

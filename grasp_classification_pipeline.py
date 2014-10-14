@@ -20,7 +20,7 @@ class CopyInRaw():
         self.raw_rgbd_dataset = h5py.File(raw_rgbd_dataset_filepath)
 
     def run(self, dataset, index):
-        dataset['rgbd_data'][index] = self.raw_rgbd_dataset['rgbd_data'][index]
+        dataset['rgbd_data'][index] = self.raw_rgbd_dataset['images'][index]
 
 
 class NormalizeRaw():
@@ -30,9 +30,9 @@ class NormalizeRaw():
 
     def run(self,dataset,index):
         rgbd_img = dataset['rgbd_data'][index]
-
+	num_channels = rgbd_img.shape[2]
         rgbd_img_norm = np.zeros_like(rgbd_img)
-        for i in range(4):
+        for i in range(num_channels):
             rgbd_img_norm[:, :, i] = (rgbd_img[:, :, i] + rgbd_img[:, :, i].min()) / (rgbd_img[:, :, i].max() + rgbd_img[:, :, i].min())
 
         dataset['rgbd_data_normalized'][index] = rgbd_img_norm
@@ -47,9 +47,9 @@ class FeatureExtraction():
         self.useFloat64 = useFloat64
 
         if self.useFloat64:
-            new_space = pylearn2.space.Conv2DSpace((480, 640), num_channels=4, axes=('c', 0, 1, 'b'), dtype='float64')
+            new_space = pylearn2.space.Conv2DSpace((1024, 1280), num_channels=1, axes=('c', 0, 1, 'b'), dtype='float64')
         else:
-            new_space = pylearn2.space.Conv2DSpace((480, 640), num_channels=4, axes=('c', 0, 1, 'b'), dtype='float32')
+            new_space = pylearn2.space.Conv2DSpace((1024, 1280), num_channels=1, axes=('c', 0, 1, 'b'), dtype='float32')
 
         cnn_model.layers = cnn_model.layers[0:-1]
 
@@ -68,11 +68,12 @@ class FeatureExtraction():
     def run(self, dataset, index):
 
         img_in = dataset['rgbd_data_normalized'][index]
+	num_channels = img_in.shape[2]
 
         if self.useFloat64:
-            img = np.zeros((4, 480, 640, 1), dtype=np.float64)
+            img = np.zeros((num_channels, 1024, 1280, 1), dtype=np.float64)
         else:
-            img = np.zeros((4, 480, 640, 1), dtype=np.float32)
+            img = np.zeros((num_channels, 1024, 1280, 1), dtype=np.float32)
 
         img[:, :, :, 0] = np.rollaxis(img_in, 2, 0)
 
@@ -323,7 +324,7 @@ class GraspClassificationPipeline():
     def __init__(self, out_filepath, in_filepath):
 
         self.dataset = h5py.File(out_filepath)
-        self._num_images = h5py.File(in_filepath)['rgbd_data'].shape[0]
+        self._num_images = 20#h5py.File(in_filepath)['rgbd_data'].shape[0]
         self._pipeline_stages = []
 
     def add_stage(self, stage):
