@@ -12,10 +12,24 @@ def preprocess_grasp_dataset(attribs):
 
     pipeline = preprocessing.Pipeline()
 
-    pipeline.items.append(hdf5_data_preprocessors.SplitGraspPatches(
+    pipeline.items.append(hdf5_data_preprocessors.CopyInRaw(
         source_dataset_filepath=attribs["raw_filepath"],
+        keys=('rgbd_patches', 'rgbd_patch_labels')
+    ))
+
+    pipeline.items.append(hdf5_data_preprocessors.RandomizePatches(
+        keys=('rgbd_patches', 'rgbd_patch_labels')
+    ))
+
+    pipeline.items.append(hdf5_data_preprocessors.NormalizePatches(
+        keys=['rgbd_patches']
+    ))
+
+    pipeline.items.append(hdf5_data_preprocessors.SplitGraspPatches(
         output_keys=(("train_patches", "train_patch_labels"), ("valid_patches", "valid_patch_labels"), ("test_patches", "test_patch_labels")),
         output_weights=(.8, .1, .1),
+
+        #source_keys=("patches", "labels")))
         source_keys=("rgbd_patches", "rgbd_patch_labels")))
 
     pipeline.items.append(hdf5_data_preprocessors.MakeC01B())
