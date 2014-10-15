@@ -3,6 +3,7 @@ import h5py
 import numpy as np
 import math
 import os
+import random
 
 from pylearn2.datasets import preprocessing
 from pylearn2.expr.preprocessing import global_contrast_normalize
@@ -15,6 +16,7 @@ class ExtractRawGraspData(preprocessing.Preprocessor):
         self.data_labels = data_labels
 
     def apply(self, dataset, can_fit=False):
+        print self
 
         #check if we have already extracted the raw data
         if self.data_labels[0] in dataset.keys() or self.data_labels[1] in dataset.keys():
@@ -42,15 +44,72 @@ class ExtractRawGraspData(preprocessing.Preprocessor):
             current_total += number_to_add
 
 
+
+class CopyInRaw(preprocessing.Preprocessor):
+
+    def __init__(self, source_dataset_filepath, keys):
+        self.source_dataset = h5py.File(source_dataset_filepath)
+        self.keys = keys
+
+    def apply(self, dataset, can_fit=False):
+        print self
+        for key in self.keys:
+            shape = self.source_dataset[key].shape
+            dataset.create_dataset(key, shape, chunks=tuple([100] + list(shape[1:])))
+            dataset[key][:] = self.source_dataset[key]
+
+
+class RandomizePatches(preprocessing.Preprocessor):
+
+    def __init__(self, keys):
+        self.keys = keys
+
+    def apply(self, dataset, can_fit=False):
+        print self
+        label_key, patch_key = self.keys
+        num_images = dataset[label_key].shape[0]
+
+        for i in range(num_images):
+            rand_index = random.randint(0, dataset[label_key].shape[0]-1)
+
+            rand_patch = np.copy(dataset[patch_key][rand_index])
+            rand_label = np.copy(dataset[label_key][rand_index])
+
+            index_patch = np.copy(dataset[patch_key][i])
+            index_label = np.copy(dataset[label_key][i])
+
+            dataset[patch_key][i] = rand_patch
+            dataset[label_key][i] = rand_label
+
+            dataset[patch_key][rand_index] = index_patch
+            dataset[label_key][rand_index] = index_label
+
+
+class NormalizePatches(preprocessing.Preprocessor):
+
+    def __init__(self, keys):
+        self.keys = keys
+
+    def apply(self, dataset, can_fit=False):
+        print self
+        for key in self.keys:
+            num_images = dataset[key].shape[0]
+            num_channels = dataset[key].shape[-1]
+
+            for i in range(num_images):
+                if i % num_images/10 == 0:
+                    print str(i) + ' / ' + str(num_images)
+                for j in range(num_channels):
+                    dataset[key][i, :, :, j] = dataset[key][i, :, :, j] / dataset[key][i, :, :, j].max()
+
+
 class SplitGraspPatches(preprocessing.Preprocessor):
 
     def __init__(self,
-                 source_dataset_filepath,
                  output_keys=(("train_patches", "train_patch_labels"), ("valid_patches", "valid_patch_labels"), ("test_patches", "test_patch_labels")),
                  output_weights = (.8, .1, .1),
                  source_keys=("rgbd_patches", "rgbd_patch_labels")):
 
-        self.source_dataset = h5py.File(source_dataset_filepath)
         self.output_keys = output_keys
         #normalize the output weights
         self.output_weights = [x/sum(output_weights) for x in output_weights]
@@ -67,20 +126,14 @@ class SplitGraspPatches(preprocessing.Preprocessor):
             patch_key = output_key_pair[0]
             label_key = output_key_pair[1]
 
-            num_patches = math.floor(self.output_weights[index] * self.source_dataset[self.source_keys[0]].shape[0])
+            num_patches = math.floor(self.output_weights[index] * dataset[self.source_keys[0]].shape[0])
             num_patches = num_patches - (num_patches % 20)
-            patch_shape = self.source_dataset[self.source_keys[0]].shape[1:4]
+            patch_shape = dataset[self.source_keys[0]].shape[1:4]
 
-            #dataset.create_dataset(patch_key, (num_patches, patch_shape[0], patch_shape[1], patch_shape[2]), chunks=(100, patch_shape[0], patch_shape[1], patch_shape[2]))
-            #dataset.create_dataset(label_key, (num_patches, 1))
+            start_range = math.floor(sum(self.output_weights[:index])*dataset[self.source_keys[0]].shape[0])
 
-            start_range = math.floor(sum(self.output_weights[:index])*self.source_dataset[self.source_keys[0]].shape[0])
-
-            dataset[patch_key] = self.source_dataset[self.source_keys[0]][int(start_range):int(start_range+num_patches)]
-            dataset[label_key] = self.source_dataset[self.source_keys[1]][int(start_range):int(start_range+num_patches)]
-
-
-
+            dataset[patch_key] = dataset[self.source_keys[0]][int(start_range):int(start_range+num_patches)]
+            dataset[label_key] = dataset[self.source_keys[1]][int(start_range):int(start_range+num_patches)]
 
 
 class ExtractGraspPatches(preprocessing.Preprocessor):
