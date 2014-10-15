@@ -324,7 +324,11 @@ class GraspClassificationPipeline():
     def __init__(self, out_filepath, in_filepath):
 
         self.dataset = h5py.File(out_filepath)
-        self._num_images = 20#h5py.File(in_filepath)['rgbd_data'].shape[0]
+	h5py_file = h5py.File(in_filepath)
+        if 'rgbd_data' in h5py_file.keys():
+            self._num_images = h5py_file['rgbd_data'].shape[0]
+	else:
+            self._num_images = h5py_file['images'].shape[0]
         self._pipeline_stages = []
 
     def add_stage(self, stage):
