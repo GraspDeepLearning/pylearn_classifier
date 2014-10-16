@@ -7,6 +7,15 @@ import random
 
 from pylearn2.datasets import preprocessing
 from pylearn2.expr.preprocessing import global_contrast_normalize
+import matplotlib.pyplot as plt
+
+import numpy
+import theano
+from theano import function, tensor
+from pylearn2.utils import sharedX
+from pylearn2.linear.conv2d import Conv2D
+from pylearn2.space import Conv2DSpace, VectorSpace
+
 
 
 class ExtractRawGraspData(preprocessing.Preprocessor):
@@ -47,16 +56,19 @@ class ExtractRawGraspData(preprocessing.Preprocessor):
 
 class CopyInRaw(preprocessing.Preprocessor):
 
-    def __init__(self, source_dataset_filepath, keys):
+    def __init__(self, source_dataset_filepath, input_keys, output_keys):
         self.source_dataset = h5py.File(source_dataset_filepath)
-        self.keys = keys
+        self.input_keys = input_keys
+        self.output_keys = output_keys
 
     def apply(self, dataset, can_fit=False):
         print self
-        for key in self.keys:
-            shape = self.source_dataset[key].shape
-            dataset.create_dataset(key, shape, chunks=tuple([100] + list(shape[1:])))
-            dataset[key][:] = self.source_dataset[key]
+        for index in range(len(self.input_keys)):
+            input_key = self.input_keys[index]
+            output_key = self.output_keys[index]
+            shape = self.source_dataset[input_key].shape
+            dataset.create_dataset(output_key, shape, chunks=tuple([100] + list(shape[1:])))
+            dataset[output_key][:] = self.source_dataset[input_key]
 
 
 class RandomizePatches(preprocessing.Preprocessor):
@@ -103,6 +115,112 @@ class NormalizePatches(preprocessing.Preprocessor):
                     dataset[key][i, :, :, j] = dataset[key][i, :, :, j] / dataset[key][i, :, :, j].max()
 
 
+class LecunSubtractiveDivisiveLCN(preprocessing.Preprocessor):
+
+    def __init__(self, in_key, out_key):
+        self.in_key = in_key
+        self.out_key = out_key
+
+    def apply(self, dataset, can_fit=False):
+        print self
+        num_images = dataset[self.in_key].shape[0]
+        shape = dataset[self.in_key].shape
+        dataset.create_dataset(self.out_key, shape, chunks=tuple([10] + list(shape[1:])))
+
+        for index in range(num_images):
+            if index % (num_images/10) == 0:
+                print str(index) + ' / ' + str(num_images)
+
+            img = dataset[self.in_key][index]
+            num_channels = img.shape[-1]
+
+            img_out = np.zeros_like(img)
+
+            img_in = np.zeros((1, img.shape[0], img.shape[1]), dtype=np.float32)
+
+            f = lecun_lcn(img_in, img_shape=img.shape[0:2], kernel_shape=9)
+            for i in range(num_channels):
+                img_in[0] = img[:, :, i]
+                img_out[:, :, i] = f(img_in.reshape((img_in.shape[0], img_in.shape[1], img_in.shape[2], 1)))
+
+            dataset[self.out_key][index] = img_out
+
+
+def lecun_lcn(input, img_shape, kernel_shape, threshold=1e-4):
+    """
+    Yann LeCun's local contrast normalization
+
+    Original code in Theano by: Guillaume Desjardins
+
+    Parameters
+    ----------
+    input : WRITEME
+    img_shape : WRITEME
+    kernel_shape : WRITEME
+    threshold : WRITEME
+    """
+    input = input.reshape((input.shape[0], input.shape[1], input.shape[2], 1))
+    X = tensor.matrix(dtype=input.dtype)
+    X = X.reshape((len(input), img_shape[0], img_shape[1], 1))
+
+    filter_shape = (1, 1, kernel_shape, kernel_shape)
+    filters = sharedX(gaussian_filter(kernel_shape).reshape(filter_shape))
+
+    input_space = Conv2DSpace(shape=img_shape, num_channels=1)
+    transformer = Conv2D(filters=filters, batch_size=len(input),
+                         input_space=input_space,
+                         border_mode='full')
+    convout = transformer.lmul(X)
+
+    # For each pixel, remove mean of 9x9 neighborhood
+    mid = int(numpy.floor(kernel_shape / 2.))
+    centered_X = X - convout[:, mid:-mid, mid:-mid, :]
+
+    # Scale down norm of 9x9 patch if norm is bigger than 1
+    transformer = Conv2D(filters=filters,
+                         batch_size=len(input),
+                         input_space=input_space,
+                         border_mode='full')
+    sum_sqr_XX = transformer.lmul(X ** 2)
+
+    denom = tensor.sqrt(sum_sqr_XX[:, mid:-mid, mid:-mid, :])
+    divisor = denom
+    #per_img_mean = denom.mean(axis=[1, 2])
+    #divisor = tensor.largest(per_img_mean.dimshuffle(0, 'x', 'x', 1), denom)
+    divisor = tensor.maximum(divisor, threshold)
+
+    new_X = centered_X / divisor
+    new_X = tensor.flatten(new_X, outdim=3)
+
+    f = function([X], new_X)
+    return f
+
+def gaussian_filter(kernel_shape):
+    """
+    .. todo::
+
+        WRITEME
+
+    Parameters
+    ----------
+    kernel_shape : WRITEME
+    """
+    x = numpy.zeros((kernel_shape, kernel_shape),
+                    dtype=theano.config.floatX)
+
+    def gauss(x, y, sigma=2.0):
+        Z = 2 * numpy.pi * sigma**2
+        return 1. / Z * numpy.exp(-(x**2 + y**2) / (2. * sigma**2))
+
+    mid = numpy.floor(kernel_shape / 2.)
+    for i in xrange(0, kernel_shape):
+        for j in xrange(0, kernel_shape):
+            x[i, j] = gauss(i - mid, j - mid)
+
+    return x / numpy.sum(x)
+
+
+
 class SplitGraspPatches(preprocessing.Preprocessor):
 
     def __init__(self,
@@ -116,6 +234,7 @@ class SplitGraspPatches(preprocessing.Preprocessor):
         self.source_keys = source_keys
 
     def apply(self, dataset, can_fit=False):
+        print self
         #check if we have already extracted patches for this set of patch_labels
         if self.output_keys[0][0] in dataset.keys():
             print "skipping split_patches, this has already been run"
@@ -206,8 +325,9 @@ class ExtractGraspPatches(preprocessing.Preprocessor):
             iteration_count += 1
 
 
-
-class PerChannelGlobalContrastNormalizePatches(preprocessing.Preprocessor):
+#per-example mean across pixel channels, not the
+# per-pixel-channel mean across examples
+class PerChannelContrastNormalizePatches(preprocessing.Preprocessor):
 
     def __init__(self,
                  data_to_normalize_key,
@@ -229,7 +349,7 @@ class PerChannelGlobalContrastNormalizePatches(preprocessing.Preprocessor):
         self.min_divisor = min_divisor
 
     def apply(self, dataset, can_fit=False):
-
+        print self
         #check if we have already flattened patches
         if self.normalized_data_key in dataset.keys():
             print "skipping normalization, this has already been run"
@@ -238,16 +358,16 @@ class PerChannelGlobalContrastNormalizePatches(preprocessing.Preprocessor):
             print "normalizing patches"
 
         in_data = dataset[self.data_to_normalize_key]
-        data_size = in_data.shape[0]
+        num_patches = in_data.shape[0]
 
         dataset.create_dataset(self.normalized_data_key, in_data.shape, chunks=((self.batch_size,)+in_data.shape[1:]))
 
         out_data = dataset[self.normalized_data_key]
 
         #iterate over patches
-        for patch_index in range(data_size):
-            if patch_index % 2000 == 0:
-                print str(patch_index) + '/' + str(data_size)
+        for patch_index in range(num_patches):
+            if patch_index % num_patches/10 == 0:
+                print str(patch_index) + '/' + str(num_patches)
 
             #iterate over rgbd so they are all normalized separately at this point
             for channel in range(4):
@@ -267,7 +387,7 @@ class MakeC01B(preprocessing.Preprocessor):
         self.y_labels = y_labels
 
     def apply(self, dataset, can_fit=False):
-
+        print self
         #check if we have already extracted the raw data
         if "c01b_" + self.data_labels[0] in dataset.keys():
             print "skipping extract_raw_data, this has already been run"
@@ -279,10 +399,12 @@ class MakeC01B(preprocessing.Preprocessor):
             y_label = self.y_labels[index]
 
             print data_label
+
             num_images = dataset[data_label].shape[0]
             x_dim = dataset[data_label].shape[1]
             y_dim = dataset[data_label].shape[2]
             num_channels = dataset[data_label].shape[3]
+
             dataset.create_dataset("c01b_" + data_label, (num_channels, x_dim, y_dim, num_images), chunks=(num_channels, x_dim, y_dim, 4))
             dataset["c01b_" + y_label] = dataset[y_label]
 

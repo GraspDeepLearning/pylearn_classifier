@@ -16,11 +16,13 @@ import matplotlib.pyplot as plt
 
 class CopyInRaw():
 
-    def __init__(self, raw_rgbd_dataset_filepath):
+    def __init__(self, raw_rgbd_dataset_filepath, raw_data_in_key='rgbd_data', raw_data_out_key='rgbd_data'):
         self.raw_rgbd_dataset = h5py.File(raw_rgbd_dataset_filepath)
+        self.raw_data_in_key = raw_data_in_key
+        self.raw_data_out_key = raw_data_out_key
 
     def run(self, dataset, index):
-        dataset['rgbd_data'][index] = self.raw_rgbd_dataset['images'][index]
+        dataset[self.raw_data_out_key][index] = self.raw_rgbd_dataset[self.raw_data_in_key][index]
 
 
 class NormalizeRaw():
@@ -30,7 +32,7 @@ class NormalizeRaw():
 
     def run(self,dataset,index):
         rgbd_img = dataset['rgbd_data'][index]
-	num_channels = rgbd_img.shape[2]
+        num_channels = rgbd_img.shape[2]
         rgbd_img_norm = np.zeros_like(rgbd_img)
         for i in range(num_channels):
             rgbd_img_norm[:, :, i] = (rgbd_img[:, :, i] + rgbd_img[:, :, i].min()) / (rgbd_img[:, :, i].max() + rgbd_img[:, :, i].min())
@@ -38,24 +40,90 @@ class NormalizeRaw():
         dataset['rgbd_data_normalized'][index] = rgbd_img_norm
 
 
+class SlidingWindowNormalization():
+
+    def __init__(self, window_size=(170, 170), key="rgbd_data"):
+        self.window_size = window_size
+        self.key = key
+
+    def run(self,dataset,index):
+        img_in = dataset[self.key][index]
+
+        x_dim = img_in.shape[0]
+        y_dim = img_in.shape[1]
+        num_channels = img_in.shape[2]
+
+        img_out = np.zeros((x_dim-self.window_size[0]/2, y_dim-self.window_size[1]/2, num_channels))
+        #EASY
+        #1)convolve a all 1's feature map with img1 to get sum of window centered at each pixel location
+        #means = sums/window_size[0]*window_size[1]
+        #
+        #std_devs = l2_norm(x-means)
+        #
+        #out_norm = (x - means)/std_devs
+
+        #out = out_norm-min(out_norm)/max(out_norm-min(out_norm
+
+
+    # def run(self, dataset, index):
+    #     img_in = dataset[self.key][index]
+    #
+    #     x_dim = img_in.shape[0]
+    #     y_dim = img_in.shape[1]
+    #     num_channels = img_in.shape[2]
+    #
+    #     img_out = np.zeros((x_dim-self.window_size[0]/2, y_dim-self.window_size[1]/2, num_channels))
+    #     for i in range(x_dim-self.window_size[0]/2):
+    #         print 'i: ' + str(i)
+    #         x_start = i+self.window_size[0]/2.0
+    #         x_end = x_start + self.window_size[0]
+    #         for j in range(y_dim-self.window_size[1]/2):
+    #             y_start = i+self.window_size[1]/2.0
+    #             y_end = y_start + self.window_size[1]
+    #             for k in range(num_channels):
+    #                 window = img_in[x_start:x_end, y_start:y_end, k]
+    #                 import time
+    #
+    #                 start = time.time()
+    #                 window.max()
+    #                 window.min()
+    #
+    #                 #start2 = time.time()
+    #                 #window_norm = (window-np.mean(window)) / np.std(window)
+    #                 #end = time.time()
+    #                 #print "time1: " + str(start2-start)
+    #                 #print "time2: " + str(end-start2)
+    #
+    #
+    #                 # window_norm = (window-np.mean(window)) / np.std(window)
+    #                 # #print i,j,k
+    #                 # #import IPython
+    #                 # #IPython.embed()
+    #                 # out = (window_norm - window_norm.min()) / (window_norm.max() - window_norm.min())
+    #                 # img_out[i, j, k] = out[self.window_size[0]/2, self.window_size[1]/2]
+
+
+
 class FeatureExtraction():
 
-    def __init__(self, model_filepath, useFloat64=False):
+    def __init__(self, model_filepath, useFloat64=False, shape=(480, 640), num_channels=4):
 
         f = open(model_filepath)
         cnn_model = cPickle.load(f)
-        self.useFloat64 = useFloat64
 
-        if self.useFloat64:
-            new_space = pylearn2.space.Conv2DSpace((1024, 1280), num_channels=1, axes=('c', 0, 1, 'b'), dtype='float64')
+        self.shape = shape
+
+        if useFloat64:
+            self.float_type_str = 'float64'
+            self.float_dtype = np.float64
+
         else:
-            new_space = pylearn2.space.Conv2DSpace((1024, 1280), num_channels=1, axes=('c', 0, 1, 'b'), dtype='float32')
+            self.float_type_str = 'float32'
+            self.float_dtype = np.float32
+
+        new_space = pylearn2.space.Conv2DSpace(shape, num_channels=num_channels, axes=('c', 0, 1, 'b'), dtype=self.float_type_str)
 
         cnn_model.layers = cnn_model.layers[0:-1]
-
-        #we want to padd zeros around the edges rather than ignoring edge pixels
-        #for i in range(len(cnn_model.layers)):
-        #    cnn_model.layers[i].border_mode = "full"
 
         cnn_model.set_batch_size(1)
         cnn_model.set_input_space(new_space)
@@ -68,12 +136,9 @@ class FeatureExtraction():
     def run(self, dataset, index):
 
         img_in = dataset['rgbd_data_normalized'][index]
-	num_channels = img_in.shape[2]
+        num_channels = img_in.shape[2]
 
-        if self.useFloat64:
-            img = np.zeros((num_channels, 1024, 1280, 1), dtype=np.float64)
-        else:
-            img = np.zeros((num_channels, 1024, 1280, 1), dtype=np.float32)
+        img = np.zeros((num_channels, self.shape[0], self.shape[1], 1), dtype=self.float_dtype)
 
         img[:, :, :, 0] = np.rollaxis(img_in, 2, 0)
 
@@ -324,10 +389,10 @@ class GraspClassificationPipeline():
     def __init__(self, out_filepath, in_filepath):
 
         self.dataset = h5py.File(out_filepath)
-	h5py_file = h5py.File(in_filepath)
+        h5py_file = h5py.File(in_filepath)
         if 'rgbd_data' in h5py_file.keys():
             self._num_images = h5py_file['rgbd_data'].shape[0]
-	else:
+        else:
             self._num_images = h5py_file['images'].shape[0]
         self._pipeline_stages = []
 
