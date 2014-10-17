@@ -115,6 +115,7 @@ class LecunSubtractiveDivisiveLCN(preprocessing.Preprocessor):
     def __init__(self, in_key, out_key):
         self.in_key = in_key
         self.out_key = out_key
+        self.sub_div_fcn = None
 
     def apply(self, dataset, can_fit=False):
         print self
@@ -132,11 +133,12 @@ class LecunSubtractiveDivisiveLCN(preprocessing.Preprocessor):
             img_out = np.zeros_like(img)
 
             img_in = np.zeros((1, img.shape[0], img.shape[1]), dtype=np.float32)
+            if not self.sub_div_fcn:
+                self.sub_div_fcn = subtractive_divisive_lcn(img_in, img_shape=img.shape[0:2], kernel_shape=9)
 
-            f = subtractive_divisive_lcn(img_in, img_shape=img.shape[0:2], kernel_shape=9)
             for i in range(num_channels):
                 img_in[0] = img[:, :, i]
-                img_out[:, :, i] = f(img_in.reshape((img_in.shape[0], img_in.shape[1], img_in.shape[2], 1)))
+                img_out[:, :, i] = self.sub_div_fcn(img_in.reshape((img_in.shape[0], img_in.shape[1], img_in.shape[2], 1)))
 
             dataset[self.out_key][index] = img_out
 
