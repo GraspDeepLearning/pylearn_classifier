@@ -12,6 +12,7 @@ from scipy.signal import argrelextrema
 from theano.tensor.nnet import conv
 
 import matplotlib.pyplot as plt
+from subtractive_divisive_lcn import *
 
 
 class CopyInRaw():
@@ -25,95 +26,48 @@ class CopyInRaw():
         dataset[self.raw_data_out_key][index] = self.raw_rgbd_dataset[self.raw_data_in_key][index]
 
 
-class NormalizeRaw():
+class LecunSubtractiveDivisiveLCN():
 
-    def __init__(self):
-        pass
+    def __init__(self, kernel_shape=9, in_key='rgbd_data', out_key='rgbd_data_normalized'):
+        self.kernel_shape = kernel_shape
+        self.in_key = in_key
+        self.out_key = out_key
+        self.sub_div_lcn = None
 
-    def run(self,dataset,index):
-        rgbd_img = dataset['rgbd_data'][index]
-        num_channels = rgbd_img.shape[2]
-        rgbd_img_norm = np.zeros_like(rgbd_img)
+    def run(self, dataset, index):
+        img = dataset[self.in_key][index]
+        num_channels = img.shape[2]
+
+        img_out = np.zeros_like(img)
+        img_in = np.zeros((1, img.shape[0], img.shape[1]), dtype=np.float32)
+
+        if not self.sub_div_lcn:
+            self.sub_div_lcn = subtractive_divisive_lcn(img_in, img_shape=img.shape[0:2], kernel_shape=self.kernel_shape)
+
         for i in range(num_channels):
-            rgbd_img_norm[:, :, i] = (rgbd_img[:, :, i] + rgbd_img[:, :, i].min()) / (rgbd_img[:, :, i].max() + rgbd_img[:, :, i].min())
+            img_in[0] = img[:, :, i]
+            img_out[:, :, i] = self.sub_div_lcn(img_in.reshape((img_in.shape[0], img_in.shape[1], img_in.shape[2], 1)))
 
-        dataset['rgbd_data_normalized'][index] = rgbd_img_norm
-
-
-class SlidingWindowNormalization():
-
-    def __init__(self, window_size=(170, 170), key="rgbd_data"):
-        self.window_size = window_size
-        self.key = key
-
-    def run(self,dataset,index):
-        img_in = dataset[self.key][index]
-
-        x_dim = img_in.shape[0]
-        y_dim = img_in.shape[1]
-        num_channels = img_in.shape[2]
-
-        img_out = np.zeros((x_dim-self.window_size[0]/2, y_dim-self.window_size[1]/2, num_channels))
-        #EASY
-        #1)convolve a all 1's feature map with img1 to get sum of window centered at each pixel location
-        #means = sums/window_size[0]*window_size[1]
-        #
-        #std_devs = l2_norm(x-means)
-        #
-        #out_norm = (x - means)/std_devs
-
-        #out = out_norm-min(out_norm)/max(out_norm-min(out_norm
-
-
-    # def run(self, dataset, index):
-    #     img_in = dataset[self.key][index]
-    #
-    #     x_dim = img_in.shape[0]
-    #     y_dim = img_in.shape[1]
-    #     num_channels = img_in.shape[2]
-    #
-    #     img_out = np.zeros((x_dim-self.window_size[0]/2, y_dim-self.window_size[1]/2, num_channels))
-    #     for i in range(x_dim-self.window_size[0]/2):
-    #         print 'i: ' + str(i)
-    #         x_start = i+self.window_size[0]/2.0
-    #         x_end = x_start + self.window_size[0]
-    #         for j in range(y_dim-self.window_size[1]/2):
-    #             y_start = i+self.window_size[1]/2.0
-    #             y_end = y_start + self.window_size[1]
-    #             for k in range(num_channels):
-    #                 window = img_in[x_start:x_end, y_start:y_end, k]
-    #                 import time
-    #
-    #                 start = time.time()
-    #                 window.max()
-    #                 window.min()
-    #
-    #                 #start2 = time.time()
-    #                 #window_norm = (window-np.mean(window)) / np.std(window)
-    #                 #end = time.time()
-    #                 #print "time1: " + str(start2-start)
-    #                 #print "time2: " + str(end-start2)
-    #
-    #
-    #                 # window_norm = (window-np.mean(window)) / np.std(window)
-    #                 # #print i,j,k
-    #                 # #import IPython
-    #                 # #IPython.embed()
-    #                 # out = (window_norm - window_norm.min()) / (window_norm.max() - window_norm.min())
-    #                 # img_out[i, j, k] = out[self.window_size[0]/2, self.window_size[1]/2]
-
+        dataset[self.out_key][index] = img_out
 
 
 class FeatureExtraction():
 
-    def __init__(self, model_filepath, useFloat64=False, shape=(480, 640), num_channels=4):
+    def __init__(self, model_filepath,
+                 in_key='rgbd_data_normalized',
+                 out_key='extracted_features',
+                 use_float_64=False,
+                 shape=(480, 640),
+                 num_channels=4):
 
         f = open(model_filepath)
         cnn_model = cPickle.load(f)
 
         self.shape = shape
+        self.in_key = in_key
+        self.out_key = out_key
 
-        if useFloat64:
+        if use_float_64:
             self.float_type_str = 'float64'
             self.float_dtype = np.float64
 
@@ -135,7 +89,7 @@ class FeatureExtraction():
 
     def run(self, dataset, index):
 
-        img_in = dataset['rgbd_data_normalized'][index]
+        img_in = dataset[self.in_key][index]
         num_channels = img_in.shape[2]
 
         img = np.zeros((num_channels, self.shape[0], self.shape[1], 1), dtype=self.float_dtype)
@@ -146,7 +100,7 @@ class FeatureExtraction():
         out_rolled = np.rollaxis(out_raw, 1, 4)
         out_window = out_rolled[0, :, :, :]
 
-        dataset['extracted_features'][index] = out_window
+        dataset[self.out_key][index] = out_window
 
 
 class Classification():
@@ -174,18 +128,20 @@ class Classification():
         dataset['heatmaps'][index] = heatmaps
 
 
-class Normalization():
+class HeatmapNormalization():
 
-    def __init__(self):
+    def __init__(self, in_key='heatmaps', out_key='normalized_heatmaps'):
+        self.in_key = in_key
+        self.out_key = out_key
         self.max = 255.0
 
     def run(self, dataset, index):
         #currently heatmaps.min() is < 0 and heatmaps.max() > 0
         #normalized between 0 and 255
-        heatmaps = dataset['heatmaps'][index]
+        heatmaps = dataset[self.in_key][index]
 
         normalize_heatmaps = self.max-(heatmaps-heatmaps.min())/(heatmaps.max()-heatmaps.min())*self.max
-        dataset['normalized_heatmaps'][index] = normalize_heatmaps
+        dataset[self.out_key][index] = normalize_heatmaps
 
 
 class ConvolvePriors():
