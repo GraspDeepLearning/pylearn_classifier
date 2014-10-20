@@ -335,10 +335,10 @@ class MakeC01B(preprocessing.Preprocessor):
             dataset["c01b_" + y_label] = dataset[y_label]
 
             for i in range(num_images):
-                if i % (num_images/100.0) == 0:
+                if i % (num_images/100) == 0:
                     print "converting to co1b: " + str(i) + "/" + str(num_images)
 
-                    b01c_data = np.copy(dataset[data_label][i])
-                    c01b_data = np.rollaxis(b01c_data, 2)
+                b01c_data = np.copy(dataset[data_label][i])
+                c01b_data = np.rollaxis(b01c_data, 2)
 
-                    dataset["c01b_" + data_label][:, :, :, i] = c01b_data
+                dataset["c01b_" + data_label][:, :, :, i] = c01b_data
