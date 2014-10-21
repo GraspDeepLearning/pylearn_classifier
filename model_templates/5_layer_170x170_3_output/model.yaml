@@ -81,7 +81,7 @@
             costs: [
                 !obj:pylearn2.costs.cost.MethodCost {
                     method: 'cost_from_X'
-                }, !obj:pylearn2.costs.mlp.L1WeightDecay {
+                }, !obj:pylearn2.costs.mlp.WeightDecay {
                         coeffs: [ .00005, .00005, .00005, .00005, .00005, .00005 ]
                 }
             ]
@@ -100,8 +100,8 @@
              save_path: "%(save_path)s/cnn_model.pkl"
         },!obj:pylearn2.training_algorithms.learning_rule.MomentumAdjustor {
             start: 1,
-            saturate: 50,
-            final_momentum: .99
+            saturate: 1000,
+            final_momentum: .9
         }
     ]
 }
