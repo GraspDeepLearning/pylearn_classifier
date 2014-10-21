@@ -491,74 +491,16 @@ class HDF5ViewConverter(DefaultViewConverter):
                    V.shape[self.axes.index(1)],
                    V.shape[self.axes.index('b')])
 
-        # if np.any(np.asarray(self.shape) != np.asarray(v_shape[1:])):
-        #     raise ValueError('View converter for views of shape batch size '
-        #                      'followed by ' + str(self.shape) +
-        #                      ' given tensor of shape ' + str(v_shape))
-
         rval = HDF5TopoViewConverter(V, self.axes)
         return rval
 
 
 class HDF5TopoViewConverter(object):
-    """
-    Class for transforming batches from the topological view to the design
-    matrix view.
 
-    Parameters
-    ----------
-    topo_view : HDF5 dataset
-        On-disk topological view.
-    axes : tuple, optional (default ('b', 0, 1, 'c'))
-        Order of axes in topological view.
-    """
-    def __init__(self, topo_view, axes=('c', 0, 1, 'b')):
+    def __init__(self, topo_view):
         self.topo_view = topo_view
-        self.axes = axes
-        self.topo_view_shape = (topo_view.shape[axes.index('c')],
-                                topo_view.shape[axes.index(0)],
-                                topo_view.shape[axes.index(1)],
-                                topo_view.shape[axes.index('b')])
-        self.pixels_per_channel = (self.topo_view_shape[1] *
-                                   self.topo_view_shape[2])
-        self.n_channels = self.topo_view_shape[0]
-        self.shape = (self.topo_view_shape[3],
-                      np.product(self.topo_view_shape[0:3]))
-        self.ndim = len(self.shape)
 
     def __getitem__(self, item):
-        """
-        Indexes the design matrix and transforms the requested batch from
-        the topological view.
-
-        Parameters
-        ----------
-        item : slice or ndarray
-            Batch selection. Either a slice or a boolean mask.
-        """
-        #print 'in get item'
         return self.topo_view[:, :, :, item]
 
-        # sel = [slice(None)] * len(self.topo_view_shape)
-        # sel[self.axes.index('b')] = item
-        # sel = tuple(sel)
-        # V = self.topo_view[sel]
-        # batch_size = V.shape[self.axes.index('b')]
-        # rval = np.zeros((batch_size,
-        #                  self.pixels_per_channel * self.n_channels),
-        #                 dtype=V.dtype)
-        # for i in xrange(self.n_channels):
-        #     ppc = self.pixels_per_channel
-        #     sel = [slice(None)] * len(V.shape)
-        #     sel[self.axes.index('c')] = i
-        #     sel = tuple(sel)
-        #     rval[:, i * ppc:(i + 1) * ppc] = V[sel].reshape(batch_size, ppc)
-        #
-        # random_gaussian_noise = np.random.normal(size=rval.shape)
-        # mask = np.random.rand(rval.shape[0], rval.shape[1]) > .8
-        # # we randomly add gaussian noise centered at 0 to 20 percent of the input values.
-        # rval_tilda = np.where(mask, rval + random_gaussian_noise, rval)
-        #
-        # return rval_tilda
-        # #return rval
 
