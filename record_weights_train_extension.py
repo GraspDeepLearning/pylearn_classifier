@@ -36,17 +36,19 @@ class RecordWeights(TrainExtension):
         #set up the dimensions of the figure
         w = math.ceil(math.sqrt(num_plots))
         h = w
-
+        
+        subplot_count = 1
         plt.figure()
         for i in range(num_weights):
             for j in range(num_channels):
                 # add a new subplot for each kernel
-                sub = plt.subplot(h, w, i + j + 1)
+                sub = plt.subplot(h, w, subplot_count)
                 #remove the axis so it looks prettier
                 sub.axes.get_xaxis().set_visible(False)
                 sub.axes.get_yaxis().set_visible(False)
                 #make it greyscale
                 plt.imshow(weights[i, :, :, j], cmap=cm.Greys_r)
+                subplot_count += 1
 
         plt.savefig(self.save_path + 'weight_' + str(self.current_weight_file_number) + '.png')
 
