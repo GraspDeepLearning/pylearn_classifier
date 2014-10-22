@@ -44,8 +44,8 @@
     },
     algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
         batch_size: %(batch_size)i,
-        learning_rate: .0000001,
-        batches_per_iter: 4,
+        learning_rate: .000001,
+        batches_per_iter: 10,
         learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
             init_momentum: .5
         },

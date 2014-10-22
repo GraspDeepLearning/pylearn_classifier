@@ -61,7 +61,7 @@
     },
     algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
         batch_size: %(batch_size)i,
-        learning_rate: .0000001,
+        learning_rate: .000001,
         batches_per_iter: 4,
         learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
             init_momentum: .5
@@ -82,7 +82,7 @@
                 !obj:pylearn2.costs.cost.MethodCost {
                     method: 'cost_from_X'
                 }, !obj:pylearn2.costs.mlp.L1WeightDecay {
-                        coeffs: [ .00005, .00005, .00005, .00005, .00005, .00005 ]
+                        coeffs: [ .000005, .000005, .000005, .000005, .000005, .000005 ]
                 }
             ]
         },
