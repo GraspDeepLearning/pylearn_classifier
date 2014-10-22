@@ -6,7 +6,7 @@ import os
 
 class RecordWeights(TrainExtension):
 
-    def __init__(self, save_path, skip_num):
+    def __init__(self, save_path, skip_num=1):
         self.save_path = save_path
         self.skip_num = skip_num
 
@@ -48,7 +48,7 @@ class RecordWeights(TrainExtension):
                 #make it greyscale
                 plt.imshow(weights[i, :, :, j], cmap=cm.Greys_r)
 
-        plt.savefig(self.save_path + '/weight_' + str(self.current_weight_file_number) + '.png')
+        plt.savefig(self.save_path + 'weight_' + str(self.current_weight_file_number) + '.png')
 
         #must close this or else plt leaks
         plt.close()
