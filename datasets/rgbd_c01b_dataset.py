@@ -497,8 +497,19 @@ class HDF5ViewConverter(DefaultViewConverter):
 
 class HDF5TopoViewConverter(object):
 
-    def __init__(self, topo_view):
+    def __init__(self, topo_view, axes=('c', 0, 1, 'b')):
         self.topo_view = topo_view
+        self.axes = axes
+        self.topo_view_shape = (topo_view.shape[axes.index('c')],
+                                topo_view.shape[axes.index(0)],
+                                topo_view.shape[axes.index(1)],
+                                topo_view.shape[axes.index('b')])
+        self.pixels_per_channel = (self.topo_view_shape[1] *
+                                 self.topo_view_shape[2])
+        self.n_channels = self.topo_view_shape[0]
+        self.shape = (self.topo_view_shape[3],
+                      np.product(self.topo_view_shape[0:3]))
+        self.ndim = len(self.shape)
 
     def __getitem__(self, item):
         return self.topo_view[:, :, :, item]
