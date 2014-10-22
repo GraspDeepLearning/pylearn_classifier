@@ -14,9 +14,13 @@ def preprocess_grasp_dataset(attribs):
 
     pipeline.items.append(hdf5_data_preprocessors.CopyInRaw(
         source_dataset_filepath=attribs["raw_filepath"],
-        input_keys=('rgbd_patches', 'rgbd_patch_labels'),
+        input_keys=('patches', 'labels'),
         output_keys=('patches', 'patch_labels')
 
+    ))
+
+    pipeline.items.append(hdf5_data_preprocessors.RandomizePatches(
+        keys=('patches', 'patch_labels')
     ))
 
     pipeline.items.append(hdf5_data_preprocessors.LecunSubtractiveDivisiveLCN(in_key='patches', out_key='normalized_patches'))
@@ -48,6 +52,6 @@ if __name__ == "__main__":
     preprocess_attribs = dict(sets=("train", "test", "valid"),
                               patch_shape=(170, 170),
                               raw_filepath=raw_rgbd_filepath,
-                              output_filepath=paths.PROCESSED_TRAINING_DATASET_DIR + 'processed_per_channel_0_to_1_normalization2' + raw_rgbd_datafile)
+                              output_filepath=paths.PROCESSED_TRAINING_DATASET_DIR + 'processed_per_channel_0_to_1_normalization3' + raw_rgbd_datafile)
 
     preprocess_grasp_dataset(preprocess_attribs)
