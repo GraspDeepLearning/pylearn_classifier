@@ -6,30 +6,44 @@ import math
 
 class RecordWeights(TrainExtension):
 
-    def __init__(self, output_dir_path):
+    def __init__(self, output_dir_path, skip_num):
         self.outout_dir_path = output_dir_path
+        self.skip_num = skip_num
+
         self.current_weight_file_number = 0
+        self.current_iteration = 0
 
     def on_monitor(self, model, dataset, algorithm):
+        if self.current_iteration % self.skip_num == 0:
+            self.plot(model)
+
+        self.current_iteration += 1
+
+    def plot(self, model):
 
         #get the current weights from the model
         weights = model.get_weights_topo()
 
         num_weights = weights.shape[0]
+        num_channels = weights.shape[-1]
+
+        #we are going to plot every channel for each kernel
+        num_plots = num_weights*num_channels
 
         #set up the dimensions of the figure
-        w = math.ceil(math.sqrt(num_weights))
+        w = math.ceil(math.sqrt(num_plots))
         h = w
 
         plt.figure()
         for i in range(num_weights):
-            # add a new subplot for each kernel
-            sub = plt.subplot(h, w, i + 1)
-            #remove the axis so it looks prettier
-            sub.axes.get_xaxis().set_visible(False)
-            sub.axes.get_yaxis().set_visible(False)
-            #make it greyscale
-            plt.imshow(weights[i, :, :, 0], cmap=cm.Greys_r)
+            for j in range(num_channels):
+                # add a new subplot for each kernel
+                sub = plt.subplot(h, w, i + j + 1)
+                #remove the axis so it looks prettier
+                sub.axes.get_xaxis().set_visible(False)
+                sub.axes.get_yaxis().set_visible(False)
+                #make it greyscale
+                plt.imshow(weights[i, :, :, j], cmap=cm.Greys_r)
 
         plt.savefig(self.outout_dir_path + '/weight_' + str(self.current_weight_file_number) + '.png')
 
