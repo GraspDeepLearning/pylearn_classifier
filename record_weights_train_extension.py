@@ -2,13 +2,16 @@ from pylearn2.train_extensions import TrainExtension
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import math
-
+import os
 
 class RecordWeights(TrainExtension):
 
-    def __init__(self, output_dir_path, skip_num):
-        self.outout_dir_path = output_dir_path
+    def __init__(self, save_path, skip_num):
+        self.save_path = save_path
         self.skip_num = skip_num
+
+        if not os.path.exists(self.save_path):
+            os.mkdir(self.save_path)
 
         self.current_weight_file_number = 0
         self.current_iteration = 0
@@ -45,7 +48,7 @@ class RecordWeights(TrainExtension):
                 #make it greyscale
                 plt.imshow(weights[i, :, :, j], cmap=cm.Greys_r)
 
-        plt.savefig(self.outout_dir_path + '/weight_' + str(self.current_weight_file_number) + '.png')
+        plt.savefig(self.save_path + '/weight_' + str(self.current_weight_file_number) + '.png')
 
         #must close this or else plt leaks
         plt.close()
