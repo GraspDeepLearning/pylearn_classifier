@@ -19,15 +19,6 @@ from pylearn2.space import CompositeSpace, VectorSpace
 
 PYLEARN_DATA_PATH = os.environ["PYLEARN2_DATA_PATH"]
 
-#these need to go away!
-#NUM_TRAINING_SAMPLES = 207000
-#NUM_LABELS = 300
-
-#NUM_TRAINING_SAMPLES = 100000
-#NUM_LABELS = 894
-
-NUM_TRAINING_SAMPLES = 100000
-NUM_LABELS = 3
 
 def get_dataset(which_set='train', dataset_filepath="/nyu_depth_labeled/rgbd_preprocessed_72x72.h5"):
 
@@ -192,7 +183,7 @@ class HDF5Dataset(DenseDesignMatrix):
                 elif src == "targets":
                     #######################################################
                     #this was added to to expand the y's just when we need them
-                    dspace = pylearn2.space.VectorSpace(NUM_LABELS)
+                    dspace = pylearn2.space.VectorSpace(sp.dim)
 
                     def fn(batch, dspace=dspace, sp=sp):
                         try:
@@ -200,7 +191,7 @@ class HDF5Dataset(DenseDesignMatrix):
                             #comment out this line if switching back to dense scene labeling with many categories
                             return batch
 
-                            batch_2 = pylearn2.utils.one_hot.one_hot(batch.astype(int), max_label=NUM_LABELS-1)
+                            batch_2 = pylearn2.utils.one_hot.one_hot(batch.astype(int), max_label=sp.dim-1)
                             #return dspace.np_format_as(batch, sp)
                             return dspace.np_format_as(batch_2, sp)
 
@@ -416,10 +407,13 @@ class HDF5DatasetIterator(object):
         next_index = self._subset_iterator.next()
 
         # convert to boolean selection
-        #sel = np.zeros(self.num_examples, dtype=bool)
-        sel = np.zeros(NUM_TRAINING_SAMPLES, dtype=bool)
+        dataset_size = self._raw_data[1].shape[0]
+
+        sel = np.zeros(dataset_size, dtype=bool)
         sel[next_index] = True
         next_index = sel
+
+        #return self._raw_data[next_index]
 
         rval = []
         for data, fn in safe_izip(self._raw_data, self._convert):
@@ -427,20 +421,16 @@ class HDF5DatasetIterator(object):
                 this_data = data[next_index]
             except TypeError:
                 this_data = data[next_index, :]
-            if fn:
-                #import IPython
-                #IPython.embed()
-                this_data = fn(this_data)
+            #if fn:
+            #    this_data = fn(this_data)
 
             assert not np.any(np.isnan(this_data))
             rval.append(this_data)
+
         rval = tuple(rval)
         if not self._return_tuple and len(rval) == 1:
             rval, = rval
 
-        #import IPython
-        #IPython.embed()
-        rval = (np.rollaxis(rval[0], 1), rval[1])
         return rval
 
     def __iter__(self):
@@ -501,27 +491,12 @@ class HDF5ViewConverter(DefaultViewConverter):
                    V.shape[self.axes.index(1)],
                    V.shape[self.axes.index('b')])
 
-        # if np.any(np.asarray(self.shape) != np.asarray(v_shape[1:])):
-        #     raise ValueError('View converter for views of shape batch size '
-        #                      'followed by ' + str(self.shape) +
-        #                      ' given tensor of shape ' + str(v_shape))
-
         rval = HDF5TopoViewConverter(V, self.axes)
         return rval
 
 
 class HDF5TopoViewConverter(object):
-    """
-    Class for transforming batches from the topological view to the design
-    matrix view.
 
-    Parameters
-    ----------
-    topo_view : HDF5 dataset
-        On-disk topological view.
-    axes : tuple, optional (default ('b', 0, 1, 'c'))
-        Order of axes in topological view.
-    """
     def __init__(self, topo_view, axes=('c', 0, 1, 'b')):
         self.topo_view = topo_view
         self.axes = axes
@@ -530,39 +505,13 @@ class HDF5TopoViewConverter(object):
                                 topo_view.shape[axes.index(1)],
                                 topo_view.shape[axes.index('b')])
         self.pixels_per_channel = (self.topo_view_shape[1] *
-                                   self.topo_view_shape[2])
+                                 self.topo_view_shape[2])
         self.n_channels = self.topo_view_shape[0]
         self.shape = (self.topo_view_shape[3],
                       np.product(self.topo_view_shape[0:3]))
         self.ndim = len(self.shape)
-        #import IPython
-        #IPython.embed()
 
     def __getitem__(self, item):
-        """
-        Indexes the design matrix and transforms the requested batch from
-        the topological view.
+        return self.topo_view[:, :, :, item]
 
-        Parameters
-        ----------
-        item : slice or ndarray
-            Batch selection. Either a slice or a boolean mask.
-        """
-        sel = [slice(None)] * len(self.topo_view_shape)
-        sel[self.axes.index('b')] = item
-        sel = tuple(sel)
-
-        V = self.topo_view[sel]
-        batch_size = V.shape[self.axes.index('b')]
-        rval = np.zeros((batch_size,
-                         self.pixels_per_channel * self.n_channels),
-                        dtype=V.dtype)
-        for i in xrange(self.n_channels):
-            ppc = self.pixels_per_channel
-            sel = [slice(None)] * len(V.shape)
-            sel[self.axes.index('c')] = i
-            sel = tuple(sel)
-            rval[:, i * ppc:(i + 1) * ppc] = V[sel].reshape(batch_size, ppc)
-
-        return rval
 

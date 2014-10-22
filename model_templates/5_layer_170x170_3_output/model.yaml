@@ -100,8 +100,8 @@
              save_path: "%(save_path)s/cnn_model.pkl"
         },!obj:pylearn2.training_algorithms.learning_rule.MomentumAdjustor {
             start: 1,
-            saturate: 50,
-            final_momentum: .99
+            saturate: 1000,
+            final_momentum: .9
         }
     ]
 }

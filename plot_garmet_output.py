@@ -44,7 +44,7 @@ class Plotter():
         figure = plt.figure(self.figure_num)
         num_histograms = len(self.histograms)
         num_subplots = len(self.subplots)
-        y_dim = 4.0
+        y_dim = 2.0
         x_dim = math.ceil((num_subplots + num_histograms)/y_dim)
 
         for i in range(len(self.subplots)):
@@ -78,7 +78,7 @@ def main():
 
     for i in range(dataset['rgbd_data'].shape[0]):
         rgbd_img = dataset['rgbd_data'][i]
-        heatmaps = dataset['heatmaps'][i]
+        heatmaps = dataset['normalized_heatmaps'][i]
         indepent_grasp_points = dataset["independent_grasp_points"][i]
         convolved_heatmaps = dataset['convolved_heatmaps'][i]
         dependent_grasp_points = dataset["dependent_grasp_points"][i]
@@ -86,41 +86,13 @@ def main():
         l_conv = dataset["l_convolved_heatmaps"][i]
         r_conv = dataset["r_convolved_heatmaps"][i]
         best_grasp = dataset["best_grasp"][i]
-        
-        '''
+
         plotter1 = Plotter(1)
 
-        plotter1.add_subplot('rgb', rgbd_img[:, :, 0])
-	plotter1.add_subplot('heatmap', heatmaps[:, :, 0])
-        #plotter1.add_subplot('d', rgbd_img[:, :, 3])
+        plotter1.add_subplot('grey_scale', rgbd_img[:, :, 0])
+        #plotter1.add_subplot('output', heatmaps[:,:,0])
         #plotter1.add_subplot('best_grasp', best_grasp)
-        '''
 
-
-	
-        plotter1 = Plotter(1)
-
-        plotter1.add_subplot('rgb', rgbd_img[:, :, 0:3])
-        plotter1.add_subplot('d', rgbd_img[:, :, 3])
-        plotter1.add_subplot('best_grasp', best_grasp)
-
-        plotter2 = Plotter(2)
-
-        plotter2.add_subplot('l_obs', heatmaps[:, :, 0]/heatmaps[:,:,0].max())
-        plotter2.add_subplot('l_g_p * palm', palm_conv[0, :, :])
-        plotter2.add_subplot('l_g_r * r_grip', r_conv[1, :, :])
-        plotter2.add_subplot('l_convolved', convolved_heatmaps[:, :, 0])
-
-        plotter2.add_subplot('p_obs', heatmaps[:, :, 1]/heatmaps[:,:,1].max())
-        plotter2.add_subplot('p_g_l * l_grip', l_conv[2, :, :])
-        plotter2.add_subplot('p_g_r * r_grip', r_conv[3, :, :])
-        plotter2.add_subplot('p_convolved', convolved_heatmaps[:, :, 1])
-
-        plotter2.add_subplot('r_obs', heatmaps[:, :, 2]/heatmaps[:,:,2].max())
-        plotter2.add_subplot('r_g_p * palm', palm_conv[5, :, :])
-        plotter2.add_subplot('r_g_l * l_grip', l_conv[4, :, :])
-        plotter2.add_subplot('r_convolved', convolved_heatmaps[:, :, 2])
-	
 
         # p_to_f_dist = 10
         # l = heatmaps[:, p_to_f_dist*2:, 0]
@@ -129,42 +101,26 @@ def main():
         #
         # out = l * p * r
         #
-        #plotter1.add_subplot("out", out)
+        # plotter1.add_subplot("out", out)
         #
-	out = heatmaps[:, :, 0]
+        out = heatmaps[:, :, 0]
+        out_min = np.argmin(out)
+        out_x, out_y = (out_min / out.shape[1], out_min % out.shape[1])
+        out_min_plot = np.copy(out)
+        marker_size=1
+        out_min_plot[out_x-marker_size:out_x+marker_size, out_y-marker_size:out_y+marker_size] = 0
+        plotter1.add_subplot("out_min", out_min_plot)
+
+        out = heatmaps[:, :, 0]
         out_max = np.argmax(out)
         out_x, out_y = (out_max / out.shape[1], out_max % out.shape[1])
-        #
         out_max_plot = np.copy(out)
-        #
-        # print out_max_plot.shape
-        # print out_x
-        # print out_y
-        out_max_plot[out_x-2:out_x+2, out_y-2:out_y+2] = 0
-        #
+        marker_size=1
+        out_max_plot[out_x-marker_size:out_x+marker_size, out_y-marker_size:out_y+marker_size] = 255
         plotter1.add_subplot("out_max", out_max_plot)
 
-        #plotter.add_histogram('l_obs', heatmaps[:, :, 0]/heatmaps[:,:,0].max())
-        #plotter.add_histogram('p_obs', heatmaps[:, :, 1]/heatmaps[:,:,1].max())
-        #plotter.add_histogram('r_obs', heatmaps[:, :, 2]/heatmaps[:,:,2].max())
-
-        #plotter.add_subplot('l_g_p', palm_conv[0, :, :])
-        #plotter.add_subplot('l_g_r', palm_conv[1, :, :])
-        #plotter.add_subplot('p_g_l', palm_conv[2, :, :])
-        #plotter.add_subplot('p_g_r', palm_conv[3, :, :])
-        #plotter.add_subplot('r_g_l', palm_conv[4, :, :])
-        #plotter.add_subplot('r_g_p', palm_conv[5, :, :])
-
-        #plotter.add_subplot('l_independent', indepent_grasp_points[0, :, :, :])
-        #plotter.add_subplot('p_independent', indepent_grasp_points[1, :, :, :])
-        #plotter.add_subplot('r_independent', indepent_grasp_points[2, :, :, :])
-
-        #plotter.add_subplot('l_dependent', dependent_grasp_points[0, :, :, :])
-        #plotter.add_subplot('p_dependent', dependent_grasp_points[1, :, :, :])
-        #plotter.add_subplot('r_dependent', dependent_grasp_points[2, :, :, :])
-
         plotter1.show()
-        plotter2.show()
+
         plt.show()
 
 
