@@ -86,7 +86,18 @@ def main():
         l_conv = dataset["l_convolved_heatmaps"][i]
         r_conv = dataset["r_convolved_heatmaps"][i]
         best_grasp = dataset["best_grasp"][i]
+        
+        '''
+        plotter1 = Plotter(1)
 
+        plotter1.add_subplot('rgb', rgbd_img[:, :, 0])
+	plotter1.add_subplot('heatmap', heatmaps[:, :, 0])
+        #plotter1.add_subplot('d', rgbd_img[:, :, 3])
+        #plotter1.add_subplot('best_grasp', best_grasp)
+        '''
+
+
+	
         plotter1 = Plotter(1)
 
         plotter1.add_subplot('rgb', rgbd_img[:, :, 0:3])
@@ -109,6 +120,7 @@ def main():
         plotter2.add_subplot('r_g_p * palm', palm_conv[5, :, :])
         plotter2.add_subplot('r_g_l * l_grip', l_conv[4, :, :])
         plotter2.add_subplot('r_convolved', convolved_heatmaps[:, :, 2])
+	
 
         # p_to_f_dist = 10
         # l = heatmaps[:, p_to_f_dist*2:, 0]
@@ -117,19 +129,20 @@ def main():
         #
         # out = l * p * r
         #
-        # plotter1.add_subplot("out", out)
+        #plotter1.add_subplot("out", out)
         #
-        # out_max = np.argmax(out)
-        # out_x, out_y = (out_max / out.shape[1], out_max % out.shape[1])
+	out = heatmaps[:, :, 0]
+        out_max = np.argmax(out)
+        out_x, out_y = (out_max / out.shape[1], out_max % out.shape[1])
         #
-        # out_max_plot = np.copy(out)
+        out_max_plot = np.copy(out)
         #
         # print out_max_plot.shape
         # print out_x
         # print out_y
-        # out_max_plot[out_x-5:out_x+5, out_y-5:out_y+5] = 0
+        out_max_plot[out_x-2:out_x+2, out_y-2:out_y+2] = 0
         #
-        # plotter1.add_subplot("out_max", out_max_plot)
+        plotter1.add_subplot("out_max", out_max_plot)
 
         #plotter.add_histogram('l_obs', heatmaps[:, :, 0]/heatmaps[:,:,0].max())
         #plotter.add_histogram('p_obs', heatmaps[:, :, 1]/heatmaps[:,:,1].max())
