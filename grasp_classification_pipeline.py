@@ -17,7 +17,7 @@ from subtractive_divisive_lcn import *
 
 class CopyInRaw():
 
-    def __init__(self, raw_rgbd_dataset_filepath, raw_data_in_key='rgbd_data', raw_data_out_key='rgbd_data'):
+    def __init__(self, raw_rgbd_dataset_filepath, raw_data_in_key='images', raw_data_out_key='rgbd_data'):
         self.raw_rgbd_dataset = h5py.File(raw_rgbd_dataset_filepath)
         self.raw_data_in_key = raw_data_in_key
         self.raw_data_out_key = raw_data_out_key
@@ -57,8 +57,8 @@ class FeatureExtraction():
                  in_key='rgbd_data_normalized',
                  out_key='extracted_features',
                  use_float_64=False,
-                 shape=(480, 640),
-                 num_channels=4):
+                 shape=(1024, 1280),
+                 num_channels=1):
 
         f = open(model_filepath)
         cnn_model = cPickle.load(f)
