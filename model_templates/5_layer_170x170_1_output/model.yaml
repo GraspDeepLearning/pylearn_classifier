@@ -18,7 +18,8 @@
                      kernel_stride: [4,4],
                      pool_shape: [2, 2],
                      pool_stride: [2, 2],
-                     W_lr_scale: 10.0
+                     W_lr_scale: 10.0,
+                     tied_b: True
                  },!obj:pylearn2.models.mlp.ConvRectifiedLinear {
                      layer_name: 'h1',
                      output_channels: %(output_channels_h1)i,
@@ -26,6 +27,7 @@
                      kernel_shape: [5, 5],
                      pool_shape: [2, 2],
                      pool_stride: [2, 2],
+                     tied_b: True
                  },!obj:pylearn2.models.mlp.ConvRectifiedLinear {
                      layer_name: 'h2',
                      output_channels: %(output_channels_h2)i,
@@ -33,6 +35,7 @@
                      kernel_shape: [3, 3],
                      pool_shape: [1, 1],
                      pool_stride: [1, 1],
+                     tied_b: True
                  },!obj:pylearn2.models.mlp.ConvRectifiedLinear {
                      layer_name: 'h3',
                      output_channels: %(output_channels_h3)i,
@@ -40,6 +43,7 @@
                      kernel_shape: [3, 3],
                      pool_shape: [1, 1],
                      pool_stride: [1, 1],
+                     tied_b: True
                  },!obj:pylearn2.models.mlp.ConvRectifiedLinear {
                      layer_name: 'h4',
                      output_channels: %(output_channels_h4)i,
@@ -47,6 +51,7 @@
                      kernel_shape: [3, 3],
                      pool_shape: [2, 2],
                      pool_stride: [2, 2],
+                     tied_b: True
                  },
                  !obj:pylearn2.models.mlp.Linear {
                     layer_name: 'y0',
