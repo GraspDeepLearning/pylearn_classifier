@@ -75,17 +75,43 @@ class FeatureExtraction():
             self.float_type_str = 'float32'
             self.float_dtype = np.float32
 
+
+
         new_space = pylearn2.space.Conv2DSpace(shape, num_channels=num_channels, axes=('c', 0, 1, 'b'), dtype=self.float_type_str)
 
-        cnn_model.layers = cnn_model.layers[0:-1]
+        start_classifier_index = 0
+        for i in range(len(cnn_model.layers)):
+            if not isinstance(cnn_model.layers[i], pylearn2.models.mlp.ConvRectifiedLinear):
+                start_classifier_index = i
+                break
+
+        classifier_layers = cnn_model.layers[start_classifier_index:]
+        cnn_model.layers = cnn_model.layers[0:start_classifier_index]
+
+
+        weights = []
+        biases = []
+
+        for layer in  cnn_model.layers:
+            weights.append(np.copy(layer.get_weights_topo()))
+            biases.append(np.copy(layer.get_biases()))
+
+        #import IPython
+        #IPython.embed()
 
         cnn_model.set_batch_size(1)
         cnn_model.set_input_space(new_space)
+
+        # for i in range(len(cnn_model.layers)):
+        #     weights_rolled = np.rollaxis(weights[i], 3, 1)
+        #     cnn_model.layers[i].set_weights(weights_rolled)
+        #     cnn_model.layers[i].set_biases(biases[i])
 
         X = cnn_model.get_input_space().make_theano_batch()
         Y = cnn_model.fprop(X)
 
         self._feature_extractor = theano.function([X], Y)
+
 
     def run(self, dataset, index):
 
@@ -97,6 +123,7 @@ class FeatureExtraction():
         img[:, :, :, 0] = np.rollaxis(img_in, 2, 0)
 
         out_raw = self._feature_extractor(img)
+
         out_rolled = np.rollaxis(out_raw, 1, 4)
         out_window = out_rolled[0, :, :, :]
 
@@ -110,22 +137,40 @@ class Classification():
         f = open(model_filepath)
 
         cnn_model = cPickle.load(f)
-        cnn_model = cnn_model.layers[-1]
 
-        W = cnn_model.get_weights_topo()
-        #W = W[0, 0, :, :]
+        start_classifier_index = 0
+        for i in range(len(cnn_model.layers)):
+            if not isinstance(cnn_model.layers[i], pylearn2.models.mlp.ConvRectifiedLinear):
+                start_classifier_index = i
+                break
 
-        b = cnn_model.b.get_value()
+        layers = cnn_model.layers[start_classifier_index:]
 
-        self.W = W
-        self.b = b
+        self.Ws = []
+        #self.bs = []
+
+        self.Ws.append(layers[0].get_weights_topo())
+
+        for i in range(len(layers)):
+            if i != 0:
+                layer = layers[i]
+                print type(layer)
+                self.Ws.append(layer.get_weights())
+                #self.bs.append(layer.get_biases())
 
     def run(self, dataset, index):
+
         X = dataset['extracted_features'][index]
 
-        heatmaps = np.dot(X, self.W)[:, :, :, 0, 0] + self.b
+        W0 = self.Ws[0]
+        out = np.dot(X, W0)[:, :, :, 0, 0]
 
-        dataset['heatmaps'][index] = heatmaps
+        for i in range(len(self.Ws)):
+            if i != 0:
+                out = np.dot(out, self.Ws[i])
+
+
+        dataset['heatmaps'][index] = out
 
 
 class HeatmapNormalization():
@@ -349,7 +394,7 @@ class GraspClassificationPipeline():
         if 'rgbd_data' in h5py_file.keys():
             self._num_images = h5py_file['rgbd_data'].shape[0]
         else:
-            self._num_images = h5py_file['images'].shape[0]
+            self._num_images = h5py_file['image'].shape[0]
         self._pipeline_stages = []
 
     def add_stage(self, stage):
