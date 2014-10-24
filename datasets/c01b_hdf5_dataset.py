@@ -9,7 +9,7 @@ import pylearn2.utils.rng
 from pylearn2.utils.iteration import SubsetIterator
 from pylearn2.utils import safe_izip, wraps
 
-class C01B_HDF5_Dataset(object):
+class C01B_HDF5_Dataset(pylearn2.datasets.dataset.Dataset):
 
     def __init__(self, topo_view_key, y_key, hdf5_filepath):
         h5py_dataset = h5py.File(hdf5_filepath)
