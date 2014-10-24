@@ -92,20 +92,17 @@ class FeatureExtraction():
         weights = []
         biases = []
 
-        for layer in  cnn_model.layers:
+        for layer in cnn_model.layers:
             weights.append(np.copy(layer.get_weights_topo()))
             biases.append(np.copy(layer.get_biases()))
-
-        #import IPython
-        #IPython.embed()
 
         cnn_model.set_batch_size(1)
         cnn_model.set_input_space(new_space)
 
-        # for i in range(len(cnn_model.layers)):
-        #     weights_rolled = np.rollaxis(weights[i], 3, 1)
-        #     cnn_model.layers[i].set_weights(weights_rolled)
-        #     cnn_model.layers[i].set_biases(biases[i])
+        for i in range(len(cnn_model.layers)):
+            weights_rolled = np.rollaxis(weights[i], 3, 1)
+            cnn_model.layers[i].set_weights(weights_rolled)
+            cnn_model.layers[i].set_biases(biases[i])
 
         X = cnn_model.get_input_space().make_theano_batch()
         Y = cnn_model.fprop(X)
