@@ -52,6 +52,6 @@ if __name__ == "__main__":
     preprocess_attribs = dict(sets=("train", "test", "valid"),
                               patch_shape=(170, 170),
                               raw_filepath=raw_rgbd_filepath,
-                              output_filepath=paths.PROCESSED_TRAINING_DATASET_DIR + 'processed_per_channel_0_to_1_normalization3' + raw_rgbd_datafile)
+                              output_filepath=paths.PROCESSED_TRAINING_DATASET_DIR + 'processed_' + raw_rgbd_datafile)
 
     preprocess_grasp_dataset(preprocess_attribs)
