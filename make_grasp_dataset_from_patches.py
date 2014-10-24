@@ -22,11 +22,18 @@ def preprocess_grasp_dataset(attribs):
         keys=('patches', 'patch_labels')
     ))
 
-    pipeline.items.append(hdf5_data_preprocessors.LecunSubtractiveDivisiveLCN(in_key='patches', out_key='normalized_patches'))
+    pipeline.items.append(hdf5_data_preprocessors.LecunSubtractiveDivisiveLCN(
+        in_key='patches',
+        out_key='normalized_patches'
+    ))
 
     #now we split the patches up into train, test, and valid sets
     pipeline.items.append(hdf5_data_preprocessors.SplitGraspPatches(
-        output_keys=(("train_patches", "train_patch_labels"), ("valid_patches", "valid_patch_labels"), ("test_patches", "test_patch_labels")),
+        output_keys=(
+            ("train_patches", "train_patch_labels"),
+            ("valid_patches", "valid_patch_labels"),
+            ("test_patches", "test_patch_labels")
+        ),
         output_weights=(.8, .1, .1),
         source_keys=("normalized_patches", "patch_labels")))
 
