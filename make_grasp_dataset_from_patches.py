@@ -16,7 +16,6 @@ def preprocess_grasp_dataset(attribs):
         source_dataset_filepath=attribs["raw_filepath"],
         input_keys=('patches', 'labels'),
         output_keys=('patches', 'patch_labels')
-
     ))
 
     pipeline.items.append(hdf5_data_preprocessors.RandomizePatches(
