@@ -3,10 +3,11 @@
 from operator import mul
 import h5py
 import random
+import numpy as np
 
 import pylearn2.datasets.dataset
 import pylearn2.utils.rng
-from pylearn2.utils.iteration import SubsetIterator
+from pylearn2.utils.iteration import SubsetIterator , resolve_iterator_class
 from pylearn2.utils import safe_izip, wraps
 
 class C01B_HDF5_Dataset(pylearn2.datasets.dataset.Dataset):
@@ -52,7 +53,7 @@ class C01B_HDF5_Dataset(pylearn2.datasets.dataset.Dataset):
         return HDF5_Iterator(self,
                              batch_size=batch_size,
                              num_batches=num_batches,
-                             mode='random_slice')
+                             mode=mode)
 
 
 class HDF5_Iterator():
@@ -83,23 +84,14 @@ class HDF5_Iterator():
             if not isinstance(num_batches, int):
                 raise ValueError("num_batches is not an int")
 
-        def validate_subset_iterator(mode, batch_size, num_batches, dataset_size):
-            if mode == 'random_uniform':
-                raise NotImplementedError
-            if mode == 'random_slice':
-                return pylearn2.utils.iteration.RandomSliceSubsetIterator(dataset_size, batch_size, num_batches)
-            if mode == 'sequential':
-                return pylearn2.utils.iteration.SequentialSubsetIterator(dataset_size, batch_size, num_batches)
-            else:
-                return mode
-
         self.dataset = dataset
         dataset_size = dataset.get_num_examples()
 
         validate_batch_size(batch_size, dataset)
         validate_num_batches(num_batches)
 
-        self._subset_iterator = validate_subset_iterator(mode, batch_size, num_batches, dataset_size)
+        subset_iterator_class = resolve_iterator_class(mode)
+        self._subset_iterator = subset_iterator_class(dataset_size, batch_size, num_batches)
 
     def __iter__(self):
         return self
@@ -107,8 +99,18 @@ class HDF5_Iterator():
     def next(self):
 
         next_index = self._subset_iterator.next()
+
+        # if we are using a shuffled sequential subset iterator
+        # then next_index will be something like:
+        # array([13713, 14644, 30532, 32127, 35746, 44163, 48490, 49363, 52141, 52216])
+        # hdf5 can only support this sort of indexing if the array elements are 
+        # in increasing order
+        if isinstance(next_index, np.ndarray):
+            next_index.sort()
+            #import IPython
+            #IPython.embed()
         batch_x = self.dataset.topo_view[:, :, :, next_index]
-        batch_y = self.dataset.y[next_index]
+        batch_y = self.dataset.y[next_index, :]
 
         return batch_x, batch_y
 
