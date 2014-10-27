@@ -14,19 +14,45 @@ from theano.tensor.nnet import conv
 import matplotlib.pyplot as plt
 from subtractive_divisive_lcn import *
 
+class GraspClassificationStage():
 
-class CopyInRaw():
+    def __init__(self, in_key, out_key):
+        self.in_key = in_key
+        self.out_key = out_key
 
-    def __init__(self, raw_rgbd_dataset_filepath, raw_data_in_key='rgbd_data', raw_data_out_key='rgbd_data'):
-        self.raw_rgbd_dataset = h5py.File(raw_rgbd_dataset_filepath)
-        self.raw_data_in_key = raw_data_in_key
-        self.raw_data_out_key = raw_data_out_key
+    def dataset_inited(self, dataset):
+        return self.out_key in dataset.keys()
+
+    def init_dataset(self, dataset):
+        out = self._run(dataset, 0)
+
+        shape = (900, out.shape[0], out.shape[1], out.shape[2])
+        chunk_size = (10, out.shape[0], out.shape[1], out.shape[2])
+
+        dataset.create_dataset(self.out_key, shape, chunks=chunk_size)
 
     def run(self, dataset, index):
-        dataset[self.raw_data_out_key][index] = self.raw_rgbd_dataset[self.raw_data_in_key][index]
+        out = self._run(dataset, index)
+        dataset[self.out_key][index] = out
 
 
-class LecunSubtractiveDivisiveLCN():
+class CopyInRaw(GraspClassificationStage):
+
+    def __init__(self, raw_rgbd_dataset_filepath, in_key='rgbd_data', out_key='rgbd_data'):
+        self.raw_rgbd_dataset = h5py.File(raw_rgbd_dataset_filepath)
+        self.in_key = in_key
+        self.out_key = out_key
+
+    def init_dataset(self, dataset):
+        shape = self.raw_rgbd_dataset[self.in_key].shape
+        chunk_size = (10, shape[1], shape[2], shape[3])
+        dataset.create_dataset(self.out_key, shape, chunks=chunk_size)
+
+    def run(self, dataset, index):
+        dataset[self.out_key][index] = self.raw_rgbd_dataset[self.in_key][index]
+
+
+class LecunSubtractiveDivisiveLCN(GraspClassificationStage):
 
     def __init__(self, kernel_shape=9, in_key='rgbd_data', out_key='rgbd_data_normalized'):
         self.kernel_shape = kernel_shape
@@ -34,7 +60,7 @@ class LecunSubtractiveDivisiveLCN():
         self.out_key = out_key
         self.sub_div_lcn = None
 
-    def run(self, dataset, index):
+    def _run(self, dataset, index):
         img = dataset[self.in_key][index]
         num_channels = img.shape[2]
 
@@ -48,22 +74,18 @@ class LecunSubtractiveDivisiveLCN():
             img_in[0] = img[:, :, i]
             img_out[:, :, i] = self.sub_div_lcn(img_in.reshape((img_in.shape[0], img_in.shape[1], img_in.shape[2], 1)))
 
-        dataset[self.out_key][index] = img_out
+        return img_out
 
 
-class FeatureExtraction():
+class FeatureExtraction(GraspClassificationStage):
 
     def __init__(self, model_filepath,
                  in_key='rgbd_data_normalized',
                  out_key='extracted_features',
-                 use_float_64=False,
-                 shape=(480, 640),
-                 num_channels=4):
+                 use_float_64=False):
 
-        f = open(model_filepath)
-        cnn_model = cPickle.load(f)
+        self.model_filepath = model_filepath
 
-        self.shape = shape
         self.in_key = in_key
         self.out_key = out_key
 
@@ -75,9 +97,24 @@ class FeatureExtraction():
             self.float_type_str = 'float32'
             self.float_dtype = np.float32
 
+        # this is defined in init_dataset
+        # we need to know the size of the input
+        # in order to init this
+        self._feature_extractor = None
+        self.shape = None
+        self.num_channels = None
 
+    def init_dataset(self, dataset):
 
-        new_space = pylearn2.space.Conv2DSpace(shape, num_channels=num_channels, axes=('c', 0, 1, 'b'), dtype=self.float_type_str)
+        f = open(self.model_filepath)
+
+        cnn_model = cPickle.load(f)
+
+        img_in = dataset[self.in_key][0]
+        self.shape = img_in.shape[0:2]
+        self.num_channels = img_in.shape[-1]
+
+        new_space = pylearn2.space.Conv2DSpace(self.shape, num_channels=self.num_channels, axes=('c', 0, 1, 'b'), dtype=self.float_type_str)
 
         start_classifier_index = 0
         for i in range(len(cnn_model.layers)):
@@ -85,9 +122,7 @@ class FeatureExtraction():
                 start_classifier_index = i
                 break
 
-        classifier_layers = cnn_model.layers[start_classifier_index:]
         cnn_model.layers = cnn_model.layers[0:start_classifier_index]
-
 
         weights = []
         biases = []
@@ -109,13 +144,12 @@ class FeatureExtraction():
 
         self._feature_extractor = theano.function([X], Y)
 
+        GraspClassificationStage.init_dataset(self, dataset)
 
-    def run(self, dataset, index):
-
+    def _run(self, dataset, index):
         img_in = dataset[self.in_key][index]
-        num_channels = img_in.shape[2]
 
-        img = np.zeros((num_channels, self.shape[0], self.shape[1], 1), dtype=self.float_dtype)
+        img = np.zeros((self.num_channels, self.shape[0], self.shape[1], 1), dtype=self.float_dtype)
 
         img[:, :, :, 0] = np.rollaxis(img_in, 2, 0)
 
@@ -124,12 +158,15 @@ class FeatureExtraction():
         out_rolled = np.rollaxis(out_raw, 1, 4)
         out_window = out_rolled[0, :, :, :]
 
-        dataset[self.out_key][index] = out_window
+        return out_window
 
 
-class Classification():
+class Classification(GraspClassificationStage):
 
-    def __init__(self, model_filepath):
+    def __init__(self, model_filepath, in_key='extracted_features', out_key='heatmaps' ):
+
+        self.in_key = in_key
+        self.out_key = out_key
 
         f = open(model_filepath)
 
@@ -155,9 +192,9 @@ class Classification():
                 self.Ws.append(layer.get_weights())
                 #self.bs.append(layer.get_biases())
 
-    def run(self, dataset, index):
+    def _run(self, dataset, index):
 
-        X = dataset['extracted_features'][index]
+        X = dataset[self.in_key][index]
 
         W0 = self.Ws[0]
         out = np.dot(X, W0)[:, :, :, 0, 0]
@@ -166,27 +203,23 @@ class Classification():
             if i != 0:
                 out = np.dot(out, self.Ws[i])
 
+        return out
 
-        dataset['heatmaps'][index] = out
 
-
-class HeatmapNormalization():
+class HeatmapNormalization(GraspClassificationStage):
 
     def __init__(self, in_key='heatmaps', out_key='normalized_heatmaps'):
         self.in_key = in_key
         self.out_key = out_key
         self.max = 255.0
 
-    def run(self, dataset, index):
-        #currently heatmaps.min() is < 0 and heatmaps.max() > 0
-        #normalized between 0 and 255
+    def _run(self, dataset, index):
         heatmaps = dataset[self.in_key][index]
-
         normalize_heatmaps = self.max-(heatmaps-heatmaps.min())/(heatmaps.max()-heatmaps.min())*self.max
-        dataset[self.out_key][index] = normalize_heatmaps
+        return normalize_heatmaps
 
 
-class ConvolvePriors():
+class ConvolvePriors(GraspClassificationStage):
 
     def __init__(self, priors_filepath):
         self.priors = h5py.File(priors_filepath)
@@ -215,10 +248,22 @@ class ConvolvePriors():
         self.conv_out = conv.conv2d(input, W)
         self.f = theano.function([input], self.conv_out)
 
+    def init_dataset(self, dataset):
 
+        l_gripper_conv, palm_conv, r_gripper_conv, l_gripper_out, palm_out, r_gripper_out = self._run(dataset, 0)
 
-    def run(self, dataset, index):
+        shape = (900, l_gripper_conv.shape[0], l_gripper_conv.shape[1], l_gripper_conv.shape[2])
+        chunk_size = (10, l_gripper_conv.shape[0], l_gripper_conv.shape[1], l_gripper_conv.shape[2])
 
+        dataset.create_dataset("l_convolved_heatmaps", shape, chunks=chunk_size)
+        dataset.create_dataset("r_convolved_heatmaps", shape, chunks=chunk_size)
+        dataset.create_dataset("p_convolved_heatmaps", shape, chunks=chunk_size)
+
+        shape = (900, palm_out.shape[0], palm_out.shape[1], 3)
+        chunk_size = (10, palm_out.shape[0], palm_out.shape[1], 3)
+        dataset.create_dataset("convolved_heatmaps", shape, chunks=chunk_size)
+
+    def _run(self, dataset, index):
         heatmaps = dataset['normalized_heatmaps'][index]
         img_in_shape = (416, 576)
         l_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 0], img_in_shape)
@@ -229,19 +274,17 @@ class ConvolvePriors():
 
         img_in[:, :] = l_gripper_obs
         l_gripper_conv = self.f(img_in)
-        dataset["l_convolved_heatmaps"][index] = l_gripper_conv
 
         img_in[:, :] = r_gripper_obs
         r_gripper_conv = self.f(img_in)
-        dataset["r_convolved_heatmaps"][index] = r_gripper_conv
 
         img_in[:, :] = palm_obs
         palm_conv = self.f(img_in)
-        dataset["p_convolved_heatmaps"][index] = palm_conv
 
         out_shape = palm_conv[0, 0].shape
         x_border = (img_in_shape[0]-out_shape[0])/2
         y_border = (img_in_shape[1]-out_shape[1])/2
+
         l_gripper_obs2 = l_gripper_obs[x_border:-x_border - 1, y_border:-y_border - 1]
         palm_obs2 = palm_obs[x_border:-x_border - 1, y_border:-y_border - 1]
         r_gripper_obs2 = r_gripper_obs[x_border:-x_border - 1, y_border:-y_border - 1]
@@ -250,136 +293,146 @@ class ConvolvePriors():
         palm_out = palm_obs2 * l_gripper_conv[0, 2] * r_gripper_conv[0, 3]
         r_gripper_out = r_gripper_obs2 * l_gripper_conv[0, 4] * palm_conv[0, 5]
 
+        return l_gripper_conv, palm_conv, r_gripper_conv, l_gripper_out, palm_out, r_gripper_out
+
+    def run(self, dataset, index):
+
+        l_gripper_conv, palm_conv, r_gripper_conv, l_gripper_out, palm_out, r_gripper_out = self._run(dataset, index)
+
+        dataset["l_convolved_heatmaps"][index] = l_gripper_conv
+        dataset["r_convolved_heatmaps"][index] = r_gripper_conv
+        dataset["p_convolved_heatmaps"][index] = palm_conv
+
         dataset['convolved_heatmaps'][index, :, :, 0] = l_gripper_out
         dataset['convolved_heatmaps'][index, :, :, 1] = palm_out
         dataset['convolved_heatmaps'][index, :, :, 2] = r_gripper_out
 
 
-class CalculateMax():
-
-
-    def run(self, dataset, index):
-
-        out_shape = dataset['convolved_heatmaps'][index][:, :, 0].shape
-        l_gripper_out = dataset['convolved_heatmaps'][index][:, :, 0]
-        palm_out = dataset['convolved_heatmaps'][index][:, :, 1]
-        r_gripper_out = dataset['convolved_heatmaps'][index][:, :, 2]
-        rgb_with_grasp = dataset["best_grasp"][index]
-
-        img_in_shape = dataset["rgbd_data"][index, :, :, 0].shape
-        x_border = (img_in_shape[0]-out_shape[0])/2
-        y_border = (img_in_shape[1]-out_shape[1])/2
-
-        rgb_with_grasp[:] = np.copy(dataset["rgbd_data"][index, x_border:-x_border - 1, y_border:-y_border - 1, 0:3])
-
-        l_max = np.argmax(l_gripper_out)
-        p_max = np.argmax(palm_out)
-        r_max = np.argmax(r_gripper_out)
-
-        lim = out_shape[1]
-        l_max_x, l_max_y = (l_max / lim, l_max % lim)
-        p_max_x, p_max_y = (p_max / lim, p_max % lim)
-        r_max_x, r_max_y = (r_max / lim, r_max % lim)
-
-        try:
-            rgb_with_grasp[l_max_x-5:l_max_x + 5, l_max_y-5:l_max_y + 5] = [0, 0, 0]
-            rgb_with_grasp[p_max_x-5:p_max_x + 5, p_max_y-5:p_max_y + 5] = [0, 0, 0]
-            rgb_with_grasp[r_max_x-5:r_max_x + 5, r_max_y-5:r_max_y + 5] = [0, 0, 0]
-        except:
-            pass
-
-        dataset['best_grasp'][index] = rgb_with_grasp
-
-
-
-
-
-
-class CalculateTopFive():
-
-    def __init__(self, input_key='convolved_heatmaps',
-                 output_key='dependent_grasp_points',
-                 border_dim=15):
-        self.input_key = input_key
-        self.output_key = output_key
-        self.border_dim = border_dim
-
-    def get_local_minima(self, output):
-        output2 = np.copy(output)
-        e = np.zeros(output2.shape)
-        extrema = argrelextrema(output2, np.greater)
-        for i in range(len(extrema[0])):
-            e[extrema[0][i], extrema[1][i]] = output[extrema[0][i], extrema[1][i]]
-
-        return e
-
-    def get_local_minima_above_threshold(self, heatmap):
-        extrema = self.get_local_minima(heatmap)
-
-        extrema_average = extrema.sum()/(extrema != 0).sum()
-        #threshold is mean of extrema excluding zeros times a scaling factor
-        threshold = extrema_average - .05 * extrema_average
-
-        #set anything negative to 0
-        extrema = np.where(extrema <= threshold, extrema, 0)
-
-        return extrema
-
-    def get_scaled_extremas(self, rgbd_img, heatmaps, extremas):
-        #extrema imposed on input:
-        border_dim = (2*self.border_dim, 2*self.border_dim)
-        extremas_with_border_shape = [sum(x) for x in zip(extremas.shape, border_dim)]
-        extremas_with_border = np.zeros(extremas_with_border_shape)
-
-        extremas_with_border[self.border_dim:-self.border_dim, self.border_dim:-self.border_dim] = heatmaps[:, :]
-        scaled_extremas = scipy.misc.imresize(extremas_with_border, rgbd_img.shape[0:2], interp='nearest')
-
-        return scaled_extremas
-
-    def run(self, dataset, index):
-
-        heatmaps = dataset[self.input_key][index]
-        rgbd_img = dataset['rgbd_data'][index]
-
-        grasp_points_img = copy.deepcopy(rgbd_img[:, :, 0:3])
-
-        for heatmap_index in range(3):
-            heatmap = heatmaps[:, :, heatmap_index]
-
-
-            local_minima = self.get_local_minima_above_threshold(heatmap)
-            local_minima = self.get_local_minima(heatmap)
-            scaled_extremas = self.get_scaled_extremas(rgbd_img, heatmap, local_minima)
-
-            extrema_dict = dict((e, i)
-                               for i, e in np.ndenumerate(scaled_extremas)
-                               if e > 0.0)
-
-            sorted_extremas = sorted(extrema_dict, key=lambda key: key, reverse=True)
-
-            for j, extrema in enumerate(sorted_extremas[-20:]):
-
-                max_extrema = extrema_dict[extrema]
-                heat_val = (j * 254 / 5)
-
-                #top
-                for i in range(-5, 5):
-                    grasp_points_img[max_extrema[0]-5, max_extrema[1] + i][:3] = [0.0, heat_val, 0.0]
-                    grasp_points_img[max_extrema[0]-4, max_extrema[1] + i][:3] = [0.0, heat_val, 0.0]
-                #bot
-                for i in range(-5, 5):
-                    grasp_points_img[max_extrema[0]+4, max_extrema[1] + i][:3] = [0.0, heat_val, 0.0]
-                    grasp_points_img[max_extrema[0]+5, max_extrema[1] + i][:3] = [0.0, heat_val, 0.0]
-                #left
-                for i in range(-5, 5):
-                    grasp_points_img[max_extrema[0]+i, max_extrema[1]-5][:3] = [0.0, heat_val, 0.0]
-                    grasp_points_img[max_extrema[0]+i, max_extrema[1]-4][:3] = [0.0, heat_val, 0.0]
-                #right
-                for i in range(-5, 5):
-                    grasp_points_img[max_extrema[0]+i, max_extrema[1]+5][:3] = [0.0, heat_val, 0.0]
-                    grasp_points_img[max_extrema[0]+i, max_extrema[1]+4][:3] = [0.0, heat_val, 0.0]
-
-            dataset[self.output_key][index, heatmap_index] = grasp_points_img
+# class CalculateMax(GraspClassificationStage):
+#
+#
+#     def run(self, dataset, index):
+#
+#         out_shape = dataset['convolved_heatmaps'][index][:, :, 0].shape
+#         l_gripper_out = dataset['convolved_heatmaps'][index][:, :, 0]
+#         palm_out = dataset['convolved_heatmaps'][index][:, :, 1]
+#         r_gripper_out = dataset['convolved_heatmaps'][index][:, :, 2]
+#         rgb_with_grasp = dataset["best_grasp"][index]
+#
+#         img_in_shape = dataset["rgbd_data"][index, :, :, 0].shape
+#         x_border = (img_in_shape[0]-out_shape[0])/2
+#         y_border = (img_in_shape[1]-out_shape[1])/2
+#
+#         rgb_with_grasp[:] = np.copy(dataset["rgbd_data"][index, x_border:-x_border - 1, y_border:-y_border - 1, 0:3])
+#
+#         l_max = np.argmax(l_gripper_out)
+#         p_max = np.argmax(palm_out)
+#         r_max = np.argmax(r_gripper_out)
+#
+#         lim = out_shape[1]
+#         l_max_x, l_max_y = (l_max / lim, l_max % lim)
+#         p_max_x, p_max_y = (p_max / lim, p_max % lim)
+#         r_max_x, r_max_y = (r_max / lim, r_max % lim)
+#
+#         try:
+#             rgb_with_grasp[l_max_x-5:l_max_x + 5, l_max_y-5:l_max_y + 5] = [0, 0, 0]
+#             rgb_with_grasp[p_max_x-5:p_max_x + 5, p_max_y-5:p_max_y + 5] = [0, 0, 0]
+#             rgb_with_grasp[r_max_x-5:r_max_x + 5, r_max_y-5:r_max_y + 5] = [0, 0, 0]
+#         except:
+#             pass
+#
+#         dataset['best_grasp'][index] = rgb_with_grasp
+#
+#
+#
+#
+#
+#
+# class CalculateTopFive(GraspClassificationStage):
+#
+#     def __init__(self, input_key='convolved_heatmaps',
+#                  output_key='dependent_grasp_points',
+#                  border_dim=15):
+#         self.input_key = input_key
+#         self.output_key = output_key
+#         self.border_dim = border_dim
+#
+#     def get_local_minima(self, output):
+#         output2 = np.copy(output)
+#         e = np.zeros(output2.shape)
+#         extrema = argrelextrema(output2, np.greater)
+#         for i in range(len(extrema[0])):
+#             e[extrema[0][i], extrema[1][i]] = output[extrema[0][i], extrema[1][i]]
+#
+#         return e
+#
+#     def get_local_minima_above_threshold(self, heatmap):
+#         extrema = self.get_local_minima(heatmap)
+#
+#         extrema_average = extrema.sum()/(extrema != 0).sum()
+#         #threshold is mean of extrema excluding zeros times a scaling factor
+#         threshold = extrema_average - .05 * extrema_average
+#
+#         #set anything negative to 0
+#         extrema = np.where(extrema <= threshold, extrema, 0)
+#
+#         return extrema
+#
+#     def get_scaled_extremas(self, rgbd_img, heatmaps, extremas):
+#         #extrema imposed on input:
+#         border_dim = (2*self.border_dim, 2*self.border_dim)
+#         extremas_with_border_shape = [sum(x) for x in zip(extremas.shape, border_dim)]
+#         extremas_with_border = np.zeros(extremas_with_border_shape)
+#
+#         extremas_with_border[self.border_dim:-self.border_dim, self.border_dim:-self.border_dim] = heatmaps[:, :]
+#         scaled_extremas = scipy.misc.imresize(extremas_with_border, rgbd_img.shape[0:2], interp='nearest')
+#
+#         return scaled_extremas
+#
+#     def run(self, dataset, index):
+#
+#         heatmaps = dataset[self.input_key][index]
+#         rgbd_img = dataset['rgbd_data'][index]
+#
+#         grasp_points_img = copy.deepcopy(rgbd_img[:, :, 0:3])
+#
+#         for heatmap_index in range(3):
+#             heatmap = heatmaps[:, :, heatmap_index]
+#
+#
+#             local_minima = self.get_local_minima_above_threshold(heatmap)
+#             local_minima = self.get_local_minima(heatmap)
+#             scaled_extremas = self.get_scaled_extremas(rgbd_img, heatmap, local_minima)
+#
+#             extrema_dict = dict((e, i)
+#                                for i, e in np.ndenumerate(scaled_extremas)
+#                                if e > 0.0)
+#
+#             sorted_extremas = sorted(extrema_dict, key=lambda key: key, reverse=True)
+#
+#             for j, extrema in enumerate(sorted_extremas[-20:]):
+#
+#                 max_extrema = extrema_dict[extrema]
+#                 heat_val = (j * 254 / 5)
+#
+#                 #top
+#                 for i in range(-5, 5):
+#                     grasp_points_img[max_extrema[0]-5, max_extrema[1] + i][:3] = [0.0, heat_val, 0.0]
+#                     grasp_points_img[max_extrema[0]-4, max_extrema[1] + i][:3] = [0.0, heat_val, 0.0]
+#                 #bot
+#                 for i in range(-5, 5):
+#                     grasp_points_img[max_extrema[0]+4, max_extrema[1] + i][:3] = [0.0, heat_val, 0.0]
+#                     grasp_points_img[max_extrema[0]+5, max_extrema[1] + i][:3] = [0.0, heat_val, 0.0]
+#                 #left
+#                 for i in range(-5, 5):
+#                     grasp_points_img[max_extrema[0]+i, max_extrema[1]-5][:3] = [0.0, heat_val, 0.0]
+#                     grasp_points_img[max_extrema[0]+i, max_extrema[1]-4][:3] = [0.0, heat_val, 0.0]
+#                 #right
+#                 for i in range(-5, 5):
+#                     grasp_points_img[max_extrema[0]+i, max_extrema[1]+5][:3] = [0.0, heat_val, 0.0]
+#                     grasp_points_img[max_extrema[0]+i, max_extrema[1]+4][:3] = [0.0, heat_val, 0.0]
+#
+#             dataset[self.output_key][index, heatmap_index] = grasp_points_img
 
 
 class GraspClassificationPipeline():
@@ -407,7 +460,14 @@ class GraspClassificationPipeline():
 
             for stage in self._pipeline_stages:
                 start_time = time.time()
+
+                #check if hd5f dataset has been created yet, and create it if need be
+                if not stage.dataset_inited(self.dataset):
+                    stage.init_dataset(self.dataset)
+
+                #actually process the data
                 stage.run(self.dataset, index)
+
                 print str(stage) + ' took ' + str(time.time() - start_time) + ' seconds to complete.'
 
 
