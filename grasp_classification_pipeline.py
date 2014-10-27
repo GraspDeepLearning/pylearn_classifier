@@ -14,6 +14,7 @@ from theano.tensor.nnet import conv
 import matplotlib.pyplot as plt
 from subtractive_divisive_lcn import *
 
+
 class GraspClassificationStage():
 
     def __init__(self, in_key, out_key):
@@ -31,9 +32,6 @@ class GraspClassificationStage():
 
         dataset.create_dataset(self.out_key, shape, chunks=chunk_size)
 
-<<<<<<< HEAD
-    def __init__(self, raw_rgbd_dataset_filepath, raw_data_in_key='images', raw_data_out_key='rgbd_data'):
-=======
     def run(self, dataset, index):
         out = self._run(dataset, index)
         dataset[self.out_key][index] = out
@@ -42,7 +40,6 @@ class GraspClassificationStage():
 class CopyInRaw(GraspClassificationStage):
 
     def __init__(self, raw_rgbd_dataset_filepath, in_key='rgbd_data', out_key='rgbd_data'):
->>>>>>> e331d14c5f892cf411c668864046b836528eb122
         self.raw_rgbd_dataset = h5py.File(raw_rgbd_dataset_filepath)
         self.in_key = in_key
         self.out_key = out_key
