@@ -143,10 +143,6 @@ class LecunSubtractiveDivisiveLCN(preprocessing.Preprocessor):
             dataset[self.out_key][index] = img_out
 
 
-
-
-
-
 class SplitGraspPatches(preprocessing.Preprocessor):
 
     def __init__(self,
@@ -249,60 +245,6 @@ class ExtractGraspPatches(preprocessing.Preprocessor):
                             if i == self.num_patches:
                                 return
             iteration_count += 1
-
-
-#per-example mean across pixel channels, not the
-# per-pixel-channel mean across examples
-class PerChannelContrastNormalizePatches(preprocessing.Preprocessor):
-
-    def __init__(self,
-                 data_to_normalize_key,
-                 normalized_data_key,
-                 batch_size,
-                 subtract_mean=True,
-                 scale=1.,
-                 sqrt_bias=0.,
-                 use_std=False,
-                 min_divisor=1e-8):
-
-        self.data_to_normalize_key = data_to_normalize_key
-        self.normalized_data_key = normalized_data_key
-        self.batch_size = batch_size
-        self.subtract_mean = subtract_mean
-        self.scale = scale
-        self.sqrt_bias = sqrt_bias
-        self.use_std = use_std
-        self.min_divisor = min_divisor
-
-    def apply(self, dataset, can_fit=False):
-        print self
-        #check if we have already flattened patches
-        if self.normalized_data_key in dataset.keys():
-            print "skipping normalization, this has already been run"
-            return
-        else:
-            print "normalizing patches"
-
-        in_data = dataset[self.data_to_normalize_key]
-        num_patches = in_data.shape[0]
-
-        dataset.create_dataset(self.normalized_data_key, in_data.shape, chunks=((self.batch_size,)+in_data.shape[1:]))
-
-        out_data = dataset[self.normalized_data_key]
-
-        #iterate over patches
-        for patch_index in range(num_patches):
-            if patch_index % num_patches/10 == 0:
-                print str(patch_index) + '/' + str(num_patches)
-
-            #iterate over rgbd so they are all normalized separately at this point
-            for channel in range(4):
-                out_data[patch_index, :, :, channel] = global_contrast_normalize(in_data[patch_index, :, :, channel],
-                                                                             scale=self.scale,
-                                                                             subtract_mean=self.subtract_mean,
-                                                                             use_std=self.use_std,
-                                                                             sqrt_bias=self.sqrt_bias,
-                                                                             min_divisor=self.min_divisor)
 
 
 class MakeC01B(preprocessing.Preprocessor):

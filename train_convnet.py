@@ -1,5 +1,6 @@
 
 import os
+import shutil
 import time
 
 from pylearn2.testing import skip
@@ -51,9 +52,7 @@ def prep_model_save_path(save_path, model_yaml, hyper_params_dict):
     assert paths.MODEL_DIR in save_path
 
     if os.path.exists(save_path):
-        for file_name in os.listdir(save_path):
-            os.remove(save_path + '/' + file_name)
-        os.rmdir(save_path)
+        shutil.rmtree(save_path)
 
     os.mkdir(save_path)
 

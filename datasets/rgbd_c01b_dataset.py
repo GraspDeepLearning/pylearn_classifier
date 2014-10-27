@@ -514,4 +514,3 @@ class HDF5TopoViewConverter(object):
     def __getitem__(self, item):
         return self.topo_view[:, :, :, item]
 
-

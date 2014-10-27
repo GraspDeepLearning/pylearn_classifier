@@ -7,7 +7,7 @@
         batch_size: %(batch_size)i,
         input_space: !obj:pylearn2.space.Conv2DSpace {
             shape: [170,170],
-            num_channels: 1,
+            num_channels: %(num_input_channels)i,
             axes: ['c', 0, 1, 'b'],
         },
         layers: [!obj:pylearn2.models.mlp.ConvRectifiedLinear {
@@ -65,7 +65,7 @@
                  },
                  !obj:pylearn2.models.mlp.Linear {
                     layer_name: 'y2',
-                    dim: 1,
+                    dim: %(num_output_channels)i,
                     irange: .05,
                  }
                 ],
@@ -74,9 +74,11 @@
         batch_size: %(batch_size)i,
         learning_rate: 0.1,
         batches_per_iter: 20,
+        monitoring_batch_size: 5,
+        monitoring_batches: 5,
         monitoring_dataset:
             {
-                'valid' : !obj:datasets.rgbd_c01b_dataset.get_dataset {
+               'valid' : !obj:datasets.rgbd_c01b_dataset.get_dataset {
                               which_set: 'c01b_valid',
                               dataset_filepath: %(dataset)s,
                           },
@@ -90,14 +92,14 @@
                 !obj:pylearn2.costs.cost.MethodCost {
                     method: 'cost_from_X'
                 }, !obj:pylearn2.costs.mlp.L1WeightDecay {
-                        coeffs: [ 0.000000005,
-                                  0.000000005,
-                                  0.000000005,
-                                  0.000000005,
-                                  0.000000005,
-                                  0.000000005,
-                                  0.000000005,
-                                  0.000000005 ]
+                        coeffs: [ 0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005 ]
                 }
             ]
         },
