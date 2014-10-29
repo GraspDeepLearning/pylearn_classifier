@@ -249,12 +249,15 @@ class ConvolvePriors(GraspClassificationStage):
         self.conv_out = conv.conv2d(input, W)
         self.f = theano.function([input], self.conv_out)
 
+    def dataset_inited(self,dataset):
+        return 'l_convolved_heatmaps' in dataset.keys()
+
     def init_dataset(self, dataset):
 
         l_gripper_conv, palm_conv, r_gripper_conv, l_gripper_out, palm_out, r_gripper_out = self._run(dataset, 0)
 
-        shape = (900, l_gripper_conv.shape[0], l_gripper_conv.shape[1], l_gripper_conv.shape[2])
-        chunk_size = (10, l_gripper_conv.shape[0], l_gripper_conv.shape[1], l_gripper_conv.shape[2])
+        shape = (900, l_gripper_conv.shape[1], l_gripper_conv.shape[2], l_gripper_conv.shape[3])
+        chunk_size = (10, l_gripper_conv.shape[1], l_gripper_conv.shape[2], l_gripper_conv.shape[3])
 
         dataset.create_dataset("l_convolved_heatmaps", shape, chunks=chunk_size)
         dataset.create_dataset("r_convolved_heatmaps", shape, chunks=chunk_size)
