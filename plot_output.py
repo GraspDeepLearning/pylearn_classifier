@@ -79,30 +79,18 @@ def main():
     for i in range(dataset['rgbd_data'].shape[0]):
         rgbd_img = dataset['rgbd_data'][i]
         heatmaps = dataset['heatmaps'][i]
-        indepent_grasp_points = dataset["independent_grasp_points"][i]
         convolved_heatmaps = dataset['convolved_heatmaps'][i]
-        dependent_grasp_points = dataset["dependent_grasp_points"][i]
         palm_conv = dataset["p_convolved_heatmaps"][i]
         l_conv = dataset["l_convolved_heatmaps"][i]
         r_conv = dataset["r_convolved_heatmaps"][i]
-        best_grasp = dataset["best_grasp"][i]
+
+        plotter1 = Plotter(1)
         
-        '''
-        plotter1 = Plotter(1)
-
-        plotter1.add_subplot('rgb', rgbd_img[:, :, 0])
-	plotter1.add_subplot('heatmap', heatmaps[:, :, 0])
-        #plotter1.add_subplot('d', rgbd_img[:, :, 3])
-        #plotter1.add_subplot('best_grasp', best_grasp)
-        '''
-
-
-	
-        plotter1 = Plotter(1)
-
-        plotter1.add_subplot('rgb', rgbd_img[:, :, 0:3])
-        plotter1.add_subplot('d', rgbd_img[:, :, 3])
-        plotter1.add_subplot('best_grasp', best_grasp)
+        if rgbd_img.shape[-1] == 4:
+            plotter1.add_subplot('rgb', rgbd_img[:, :, 0:3])
+            plotter1.add_subplot('d', rgbd_img[:, :, 3])
+        else:
+            plotter1.add_subplot('d', rgbd_img[:,:,0])
 
         plotter2 = Plotter(2)
 
@@ -120,48 +108,28 @@ def main():
         plotter2.add_subplot('r_g_p * palm', palm_conv[5, :, :])
         plotter2.add_subplot('r_g_l * l_grip', l_conv[4, :, :])
         plotter2.add_subplot('r_convolved', convolved_heatmaps[:, :, 2])
-	
 
-        # p_to_f_dist = 10
-        # l = heatmaps[:, p_to_f_dist*2:, 0]
-        # p = heatmaps[:, p_to_f_dist:-p_to_f_dist, 1]
-        # r = heatmaps[:, :-p_to_f_dist*2, 2]
-        #
-        # out = l * p * r
-        #
-        #plotter1.add_subplot("out", out)
-        #
-	out = heatmaps[:, :, 0]
-        out_max = np.argmax(out)
-        out_x, out_y = (out_max / out.shape[1], out_max % out.shape[1])
-        #
-        out_max_plot = np.copy(out)
-        #
-        # print out_max_plot.shape
-        # print out_x
-        # print out_y
-        out_max_plot[out_x-2:out_x+2, out_y-2:out_y+2] = 0
-        #
-        plotter1.add_subplot("out_max", out_max_plot)
+        palm_out = convolved_heatmaps[:, :, 1]
+        palm_min = np.argmin(palm_out)
+        palm_out_x, palm_out_y = (palm_min / palm_out.shape[1], palm_min % palm_out.shape[1])
 
-        #plotter.add_histogram('l_obs', heatmaps[:, :, 0]/heatmaps[:,:,0].max())
-        #plotter.add_histogram('p_obs', heatmaps[:, :, 1]/heatmaps[:,:,1].max())
-        #plotter.add_histogram('r_obs', heatmaps[:, :, 2]/heatmaps[:,:,2].max())
+        l_out = convolved_heatmaps[:, :, 0]
+        l_min = np.argmin(l_out)
+        l_out_x, l_out_y = (l_min / l_out.shape[1], l_min % l_out.shape[1])
 
-        #plotter.add_subplot('l_g_p', palm_conv[0, :, :])
-        #plotter.add_subplot('l_g_r', palm_conv[1, :, :])
-        #plotter.add_subplot('p_g_l', palm_conv[2, :, :])
-        #plotter.add_subplot('p_g_r', palm_conv[3, :, :])
-        #plotter.add_subplot('r_g_l', palm_conv[4, :, :])
-        #plotter.add_subplot('r_g_p', palm_conv[5, :, :])
+        r_out = convolved_heatmaps[:, :, 2]
+        r_min = np.argmin(r_out)
+        r_out_x, r_out_y = (r_min / r_out.shape[1], r_min % r_out.shape[1])
 
-        #plotter.add_subplot('l_independent', indepent_grasp_points[0, :, :, :])
-        #plotter.add_subplot('p_independent', indepent_grasp_points[1, :, :, :])
-        #plotter.add_subplot('r_independent', indepent_grasp_points[2, :, :, :])
+        rgbd_overlay = np.copy(rgbd_img)
+        x_offset = (rgbd_overlay.shape[0]-palm_out.shape[0])/2
+        y_offset = (rgbd_overlay.shape[1]-palm_out.shape[1])/2
 
-        #plotter.add_subplot('l_dependent', dependent_grasp_points[0, :, :, :])
-        #plotter.add_subplot('p_dependent', dependent_grasp_points[1, :, :, :])
-        #plotter.add_subplot('r_dependent', dependent_grasp_points[2, :, :, :])
+        rgbd_overlay[x_offset+ l_out_x-10:x_offset+l_out_x+10,y_offset+ l_out_y-10:y_offset+l_out_y+10, :] = 0
+        rgbd_overlay[x_offset+ palm_out_x-10:x_offset+palm_out_x+10,y_offset+ palm_out_y-10:y_offset+palm_out_y+10, :] = 0
+        rgbd_overlay[x_offset+ r_out_x-10:x_offset+r_out_x+10,y_offset+ r_out_y-10:y_offset+r_out_y+10, :] = 0
+
+        plotter1.add_subplot("convolved_overlay", rgbd_overlay[:, :, 0])
 
         plotter1.show()
         plotter2.show()
