@@ -1,6 +1,5 @@
 
-from grasp_classification_pipeline import *
-
+from classification_pipelines import *
 import paths
 import os
 
@@ -29,21 +28,8 @@ def main():
 
     save_filepath = init_save_file(dataset_file, conv_model_name)
 
-    pipeline = GraspClassificationPipeline(save_filepath, raw_rgbd_filepath)
-
-    pipeline.add_stage(CopyInRaw(raw_rgbd_filepath, in_key='image', out_key='rgbd_data'))
-    pipeline.add_stage(LecunSubtractiveDivisiveLCN(in_key='rgbd_data', out_key='rgbd_data_normalized'))
-    pipeline.add_stage(FeatureExtraction(conv_model_filepath, use_float_64=False))
-    pipeline.add_stage(Classification(conv_model_filepath))
-    pipeline.add_stage(HeatmapNormalization())
-
-    if RUNNING_GRASPS:
-        pipeline.add_stage(Rescale(in_key="normalized_heatmaps",
-                           out_key="rescaled_heatmaps",
-                           model_filepath=conv_model_filepath))
-
-        priors_filepath = paths.PRIORS_DIR + 'saxena_rect_priors.h5'
-        pipeline.add_stage(ConvolvePriors(priors_filepath))
+    pipeline = GraspClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath)
+    #pipeline = GarmetClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath)
 
     pipeline.run()
 
