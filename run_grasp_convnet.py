@@ -38,6 +38,10 @@ def main():
     pipeline.add_stage(HeatmapNormalization())
 
     if RUNNING_GRASPS:
+        pipeline.add_stage(Rescale(in_key="normalized_heatmaps",
+                           out_key="rescaled_heatmaps",
+                           model_filepath=conv_model_filepath))
+
         priors_filepath = paths.PRIORS_DIR + 'saxena_rect_priors.h5'
         pipeline.add_stage(ConvolvePriors(priors_filepath))
 

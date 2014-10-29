@@ -14,6 +14,9 @@ from theano.tensor.nnet import conv
 import matplotlib.pyplot as plt
 from subtractive_divisive_lcn import *
 
+import cPickle
+import pylearn2.models.mlp
+
 
 class GraspClassificationStage():
 
@@ -218,6 +221,58 @@ class HeatmapNormalization(GraspClassificationStage):
         heatmaps = dataset[self.in_key][index]
         normalize_heatmaps = self.max-(heatmaps-heatmaps.min())/(heatmaps.max()-heatmaps.min())*self.max
         return normalize_heatmaps
+
+
+
+
+
+class Rescale(GraspClassificationStage):
+
+    def __init__(self, in_key, out_key, model_filepath):
+        self.in_key = in_key
+        self.out_key = out_key
+        f = open(model_filepath)
+        model = cPickle.load(f)
+
+        self.pool_strides = []
+        self.pool_shapes = []
+        self.kernel_strides = []
+        self.kernel_shapes = []
+
+        for layer in model.layers:
+            if isinstance(layer, pylearn2.models.mlp.ConvRectifiedLinear):
+                self.pool_strides.append(layer.pool_stride)
+                self.pool_shapes.append(layer.pool_shape)
+                self.kernel_shapes.append(layer.kernel_shape)
+                self.kernel_strides.append(layer.kernel_stride)
+
+        self.pool_strides.reverse()
+        self.pool_shapes.reverse()
+        self.kernel_strides.reverse()
+        self.kernel_shapes.reverse()
+
+    def init_dataset(self, dataset):
+
+        heatmaps = self._run(dataset, 0)
+
+        dataset.create_dataset('expanded_heatmaps',
+                               heatmaps.shape,
+                               chunks=(10, heatmaps.shape[1], heatmaps.shape[2], heatmaps.shape[3]))
+
+    def _run(self, dataset, index):
+
+        def expand(heatmap, rescale_factor):
+            shape = heatmap.shape
+            new_shape = (shape[0] * rescale_factor[0], shape[1] * rescale_factor[1], shape[3])
+            return scipy.misc.imresize(heatmap, new_shape)
+
+        heatmap = dataset[index]
+        for i in range(len(self.pool_shapes)):
+
+            heatmap = expand(heatmap, self.pool_strides[i])
+            heatmap = expand(heatmap, self.kernel_strides[i])
+
+        return heatmap
 
 
 class ConvolvePriors(GraspClassificationStage):
