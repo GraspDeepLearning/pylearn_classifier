@@ -1,6 +1,5 @@
 
-from grasp_classification_pipeline import *
-
+from classification_pipelines import *
 import paths
 import os
 
@@ -27,12 +26,10 @@ def main():
     dataset_file = paths.choose_from(paths.RAW_TRAINING_DATASET_DIR)
     raw_rgbd_filepath = paths.RAW_TRAINING_DATASET_DIR + dataset_file
 
-
     save_filepath = init_save_file(dataset_file, conv_model_name)
 
-    pipeline = GraspClassificationPipeline(save_filepath, raw_rgbd_filepath)
-
-
+    pipeline = GraspClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath)
+    #pipeline = GarmetClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath)
 
     pipeline.run()
 
