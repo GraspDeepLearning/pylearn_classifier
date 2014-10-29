@@ -18,7 +18,7 @@ import cPickle
 import pylearn2.models.mlp
 
 
-class GraspClassificationStage():
+class ClassificationStage():
 
     def __init__(self, in_key, out_key):
         self.in_key = in_key
@@ -39,8 +39,12 @@ class GraspClassificationStage():
         out = self._run(dataset, index)
         dataset[self.out_key][index] = out
 
+    def _run(self, dataset, index):
+        print "Base class _run should not be called."
+        raise NotImplementedError
 
-class CopyInRaw(GraspClassificationStage):
+
+class CopyInRaw(ClassificationStage):
 
     def __init__(self, raw_rgbd_dataset_filepath, in_key='rgbd_data', out_key='rgbd_data'):
         self.raw_rgbd_dataset = h5py.File(raw_rgbd_dataset_filepath)
@@ -56,7 +60,7 @@ class CopyInRaw(GraspClassificationStage):
         dataset[self.out_key][index] = self.raw_rgbd_dataset[self.in_key][index]
 
 
-class LecunSubtractiveDivisiveLCN(GraspClassificationStage):
+class LecunSubtractiveDivisiveLCN(ClassificationStage):
 
     def __init__(self, kernel_shape=9, in_key='rgbd_data', out_key='rgbd_data_normalized'):
         self.kernel_shape = kernel_shape
@@ -81,17 +85,16 @@ class LecunSubtractiveDivisiveLCN(GraspClassificationStage):
         return img_out
 
 
-class FeatureExtraction(GraspClassificationStage):
+class FeatureExtraction(ClassificationStage):
 
     def __init__(self, model_filepath,
                  in_key='rgbd_data_normalized',
                  out_key='extracted_features',
                  use_float_64=False):
 
-        self.model_filepath = model_filepath
+        ClassificationStage.__init__(self, in_key, out_key)
 
-        self.in_key = in_key
-        self.out_key = out_key
+        self.model_filepath = model_filepath
 
         if use_float_64:
             self.float_type_str = 'float64'
@@ -148,7 +151,7 @@ class FeatureExtraction(GraspClassificationStage):
 
         self._feature_extractor = theano.function([X], Y)
 
-        GraspClassificationStage.init_dataset(self, dataset)
+        ClassificationStage.init_dataset(self, dataset)
 
     def _run(self, dataset, index):
         img_in = dataset[self.in_key][index]
@@ -165,7 +168,7 @@ class FeatureExtraction(GraspClassificationStage):
         return out_window
 
 
-class Classification(GraspClassificationStage):
+class Classification(ClassificationStage):
 
     def __init__(self, model_filepath, in_key='extracted_features', out_key='heatmaps' ):
 
@@ -210,7 +213,7 @@ class Classification(GraspClassificationStage):
         return out
 
 
-class HeatmapNormalization(GraspClassificationStage):
+class HeatmapNormalization(ClassificationStage):
 
     def __init__(self, in_key='heatmaps', out_key='normalized_heatmaps'):
         self.in_key = in_key
@@ -226,7 +229,7 @@ class HeatmapNormalization(GraspClassificationStage):
 
 
 
-class Rescale(GraspClassificationStage):
+class Rescale(ClassificationStage):
 
     def __init__(self, in_key, out_key, model_filepath):
         self.in_key = in_key
@@ -254,28 +257,30 @@ class Rescale(GraspClassificationStage):
     def init_dataset(self, dataset):
 
         heatmaps = self._run(dataset, 0)
+        num_examples = dataset[self.in_key].shape[0]
 
-        dataset.create_dataset('expanded_heatmaps',
-                               heatmaps.shape,
-                               chunks=(10, heatmaps.shape[1], heatmaps.shape[2], heatmaps.shape[3]))
+        shape = (num_examples, heatmaps.shape[0], heatmaps.shape[1], heatmaps.shape[2])
+
+        dataset.create_dataset(self.out_key,
+                               shape,
+                               chunks=(10, heatmaps.shape[0], heatmaps.shape[1], heatmaps.shape[2]))
 
     def _run(self, dataset, index):
 
         def expand(heatmap, rescale_factor):
             shape = heatmap.shape
-            new_shape = (shape[0] * rescale_factor[0], shape[1] * rescale_factor[1], shape[3])
+            new_shape = (shape[0] * rescale_factor[0], shape[1] * rescale_factor[1], shape[2])
             return scipy.misc.imresize(heatmap, new_shape)
 
-        heatmap = dataset[index]
+        heatmap = dataset[self.in_key][index]
         for i in range(len(self.pool_shapes)):
-
             heatmap = expand(heatmap, self.pool_strides[i])
             heatmap = expand(heatmap, self.kernel_strides[i])
 
         return heatmap
 
 
-class ConvolvePriors(GraspClassificationStage):
+class ConvolvePriors(ClassificationStage):
 
     def __init__(self, priors_filepath):
         self.priors = h5py.File(priors_filepath)

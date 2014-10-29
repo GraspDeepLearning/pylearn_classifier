@@ -8,7 +8,7 @@ RUNNING_GRASPS = True
 
 def init_save_file(input_data_file, input_model_file):
 
-    dataset_filepath = paths.HEATMAPS_DATASET_DIR + input_data_file[:-3] + '_' + input_model_file + '4.h5'
+    dataset_filepath = paths.HEATMAPS_DATASET_DIR + input_data_file[:-3] + '_' + input_model_file + '.h5'
 
     if os.path.exists(dataset_filepath):
         os.remove(dataset_filepath)
@@ -28,8 +28,9 @@ def main():
 
     save_filepath = init_save_file(dataset_file, conv_model_name)
 
-    pipeline = GraspClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath)
-    #pipeline = GarmetClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath)
+    #pipeline = GraspClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="rgbd_data")
+    pipeline = GraspClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="depth_data")
+    #pipeline = GarmetClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="rgbd_data")
 
     pipeline.run()
 

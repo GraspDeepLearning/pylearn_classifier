@@ -43,26 +43,32 @@ class ClassificationPipeline():
 
 class GarmetClassificationPipeline(ClassificationPipeline):
 
-    def __init__(self, out_filepath, in_filepath, model_filepath):
+    def __init__(self, out_filepath, in_filepath, model_filepath, input_key):
 
-        super(GarmetClassificationPipeline, self).__init__(out_filepath, in_filepath)
+        ClassificationPipeline.__init__(self, out_filepath, in_filepath)
 
-        self.add_stage(CopyInRaw(in_filepath, in_key='image', out_key='rgbd_data'))
+        self.add_stage(CopyInRaw(in_filepath, in_key=input_key, out_key='rgbd_data'))
         self.add_stage(LecunSubtractiveDivisiveLCN(in_key='rgbd_data', out_key='rgbd_data_normalized'))
-        self.add_stage(FeatureExtraction(model_filepath, use_float_64=False))
+        self.add_stage(FeatureExtraction(model_filepath,
+                 in_key='rgbd_data_normalized',
+                 out_key='extracted_features',
+                 use_float_64=False))
         self.add_stage(Classification(model_filepath))
         self.add_stage(HeatmapNormalization())
 
 
 class GraspClassificationPipeline(ClassificationPipeline):
 
-    def __init__(self, out_filepath, in_filepath, model_filepath):
+    def __init__(self, out_filepath, in_filepath, model_filepath, input_key):
 
-        super(GraspClassificationPipeline, self).__init__(out_filepath, in_filepath)
+        ClassificationPipeline.__init__(self, out_filepath, in_filepath)
 
-        self.add_stage(CopyInRaw(in_filepath, in_key='image', out_key='rgbd_data'))
+        self.add_stage(CopyInRaw(in_filepath, in_key=input_key, out_key='rgbd_data'))
         self.add_stage(LecunSubtractiveDivisiveLCN(in_key='rgbd_data', out_key='rgbd_data_normalized'))
-        self.add_stage(FeatureExtraction(model_filepath, use_float_64=False))
+        self.add_stage(FeatureExtraction(model_filepath,
+                 in_key='rgbd_data_normalized',
+                 out_key='extracted_features',
+                 use_float_64=False))
         self.add_stage(Classification(model_filepath))
         self.add_stage(HeatmapNormalization())
 
