@@ -121,6 +121,9 @@ class HDF5_Iterator():
         for post_processor in self.iterator_post_processors:
             batch_x, batch_y = post_processor.apply(batch_x, batch_y)
 
+        batch_x = np.array(batch_x, dtype=np.float32)
+        batch_y = np.array(batch_y, dtype=np.float32)
+
         return batch_x, batch_y
 
     @property
