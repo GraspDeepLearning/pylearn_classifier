@@ -14,7 +14,11 @@ from theano.tensor.nnet import conv
 import matplotlib.pyplot as plt
 from subtractive_divisive_lcn import *
 
-class GraspClassificationStage():
+import cPickle
+import pylearn2.models.mlp
+
+
+class ClassificationStage():
 
     def __init__(self, in_key, out_key):
         self.in_key = in_key
@@ -35,8 +39,12 @@ class GraspClassificationStage():
         out = self._run(dataset, index)
         dataset[self.out_key][index] = out
 
+    def _run(self, dataset, index):
+        print "Base class _run should not be called."
+        raise NotImplementedError
 
-class CopyInRaw(GraspClassificationStage):
+
+class CopyInRaw(ClassificationStage):
 
     def __init__(self, raw_rgbd_dataset_filepath, in_key='rgbd_data', out_key='rgbd_data'):
         self.raw_rgbd_dataset = h5py.File(raw_rgbd_dataset_filepath)
@@ -52,7 +60,7 @@ class CopyInRaw(GraspClassificationStage):
         dataset[self.out_key][index] = self.raw_rgbd_dataset[self.in_key][index]
 
 
-class LecunSubtractiveDivisiveLCN(GraspClassificationStage):
+class LecunSubtractiveDivisiveLCN(ClassificationStage):
 
     def __init__(self, kernel_shape=9, in_key='rgbd_data', out_key='rgbd_data_normalized'):
         self.kernel_shape = kernel_shape
@@ -77,17 +85,16 @@ class LecunSubtractiveDivisiveLCN(GraspClassificationStage):
         return img_out
 
 
-class FeatureExtraction(GraspClassificationStage):
+class FeatureExtraction(ClassificationStage):
 
     def __init__(self, model_filepath,
                  in_key='rgbd_data_normalized',
                  out_key='extracted_features',
                  use_float_64=False):
 
-        self.model_filepath = model_filepath
+        ClassificationStage.__init__(self, in_key, out_key)
 
-        self.in_key = in_key
-        self.out_key = out_key
+        self.model_filepath = model_filepath
 
         if use_float_64:
             self.float_type_str = 'float64'
@@ -144,7 +151,7 @@ class FeatureExtraction(GraspClassificationStage):
 
         self._feature_extractor = theano.function([X], Y)
 
-        GraspClassificationStage.init_dataset(self, dataset)
+        ClassificationStage.init_dataset(self, dataset)
 
     def _run(self, dataset, index):
         img_in = dataset[self.in_key][index]
@@ -161,7 +168,7 @@ class FeatureExtraction(GraspClassificationStage):
         return out_window
 
 
-class Classification(GraspClassificationStage):
+class Classification(ClassificationStage):
 
     def __init__(self, model_filepath, in_key='extracted_features', out_key='heatmaps' ):
 
@@ -206,7 +213,7 @@ class Classification(GraspClassificationStage):
         return out
 
 
-class HeatmapNormalization(GraspClassificationStage):
+class HeatmapNormalization(ClassificationStage):
 
     def __init__(self, in_key='heatmaps', out_key='normalized_heatmaps'):
         self.in_key = in_key
@@ -219,7 +226,61 @@ class HeatmapNormalization(GraspClassificationStage):
         return normalize_heatmaps
 
 
-class ConvolvePriors(GraspClassificationStage):
+
+
+
+class Rescale(ClassificationStage):
+
+    def __init__(self, in_key, out_key, model_filepath):
+        self.in_key = in_key
+        self.out_key = out_key
+        f = open(model_filepath)
+        model = cPickle.load(f)
+
+        self.pool_strides = []
+        self.pool_shapes = []
+        self.kernel_strides = []
+        self.kernel_shapes = []
+
+        for layer in model.layers:
+            if isinstance(layer, pylearn2.models.mlp.ConvRectifiedLinear):
+                self.pool_strides.append(layer.pool_stride)
+                self.pool_shapes.append(layer.pool_shape)
+                self.kernel_shapes.append(layer.kernel_shape)
+                self.kernel_strides.append(layer.kernel_stride)
+
+        self.pool_strides.reverse()
+        self.pool_shapes.reverse()
+        self.kernel_strides.reverse()
+        self.kernel_shapes.reverse()
+
+    def init_dataset(self, dataset):
+
+        heatmaps = self._run(dataset, 0)
+        num_examples = dataset[self.in_key].shape[0]
+
+        shape = (num_examples, heatmaps.shape[0], heatmaps.shape[1], heatmaps.shape[2])
+
+        dataset.create_dataset(self.out_key,
+                               shape,
+                               chunks=(10, heatmaps.shape[0], heatmaps.shape[1], heatmaps.shape[2]))
+
+    def _run(self, dataset, index):
+
+        def expand(heatmap, rescale_factor):
+            shape = heatmap.shape
+            new_shape = (shape[0] * rescale_factor[0], shape[1] * rescale_factor[1], shape[2])
+            return scipy.misc.imresize(heatmap, new_shape)
+
+        heatmap = dataset[self.in_key][index]
+        for i in range(len(self.pool_shapes)):
+            heatmap = expand(heatmap, self.pool_strides[i])
+            heatmap = expand(heatmap, self.kernel_strides[i])
+
+        return heatmap
+
+
+class ConvolvePriors(ClassificationStage):
 
     def __init__(self, priors_filepath):
         self.priors = h5py.File(priors_filepath)
@@ -248,12 +309,15 @@ class ConvolvePriors(GraspClassificationStage):
         self.conv_out = conv.conv2d(input, W)
         self.f = theano.function([input], self.conv_out)
 
+    def dataset_inited(self,dataset):
+        return 'l_convolved_heatmaps' in dataset.keys()
+
     def init_dataset(self, dataset):
 
         l_gripper_conv, palm_conv, r_gripper_conv, l_gripper_out, palm_out, r_gripper_out = self._run(dataset, 0)
 
-        shape = (900, l_gripper_conv.shape[0], l_gripper_conv.shape[1], l_gripper_conv.shape[2])
-        chunk_size = (10, l_gripper_conv.shape[0], l_gripper_conv.shape[1], l_gripper_conv.shape[2])
+        shape = (900, l_gripper_conv.shape[1], l_gripper_conv.shape[2], l_gripper_conv.shape[3])
+        chunk_size = (10, l_gripper_conv.shape[1], l_gripper_conv.shape[2], l_gripper_conv.shape[3])
 
         dataset.create_dataset("l_convolved_heatmaps", shape, chunks=chunk_size)
         dataset.create_dataset("r_convolved_heatmaps", shape, chunks=chunk_size)
@@ -264,11 +328,17 @@ class ConvolvePriors(GraspClassificationStage):
         dataset.create_dataset("convolved_heatmaps", shape, chunks=chunk_size)
 
     def _run(self, dataset, index):
-        heatmaps = dataset['normalized_heatmaps'][index]
-        img_in_shape = (416, 576)
-        l_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 0], img_in_shape)
-        palm_obs = scipy.misc.imresize(heatmaps[:, :, 1], img_in_shape)
-        r_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 2], img_in_shape)
+        heatmaps = dataset['rescaled_heatmaps'][index]
+        # img_in_shape = (416, 576)
+        # l_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 0], img_in_shape)
+        # palm_obs = scipy.misc.imresize(heatmaps[:, :, 1], img_in_shape)
+        # r_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 2], img_in_shape)
+
+        l_gripper_obs = heatmaps[:, :, 0]
+        palm_obs = heatmaps[:, :, 1]
+        r_gripper_obs = heatmaps[:, :, 2]
+        img_in_shape = heatmaps.shape[:-1]
+
 
         img_in = np.zeros((1, 1, img_in_shape[0], img_in_shape[1]), dtype=np.float32)
 
@@ -435,40 +505,7 @@ class ConvolvePriors(GraspClassificationStage):
 #             dataset[self.output_key][index, heatmap_index] = grasp_points_img
 
 
-class GraspClassificationPipeline():
 
-    def __init__(self, out_filepath, in_filepath):
-
-        self.dataset = h5py.File(out_filepath)
-        h5py_file = h5py.File(in_filepath)
-        if 'rgbd_data' in h5py_file.keys():
-            self._num_images = h5py_file['rgbd_data'].shape[0]
-        else:
-            self._num_images = h5py_file['image'].shape[0]
-        self._pipeline_stages = []
-
-    def add_stage(self, stage):
-        self._pipeline_stages.append(stage)
-
-    def run(self):
-
-        for index in range(self._num_images):
-
-            print
-            print 'starting ' + str(index) + " of " + str(self._num_images)
-            print
-
-            for stage in self._pipeline_stages:
-                start_time = time.time()
-
-                #check if hd5f dataset has been created yet, and create it if need be
-                if not stage.dataset_inited(self.dataset):
-                    stage.init_dataset(self.dataset)
-
-                #actually process the data
-                stage.run(self.dataset, index)
-
-                print str(stage) + ' took ' + str(time.time() - start_time) + ' seconds to complete.'
 
 
 

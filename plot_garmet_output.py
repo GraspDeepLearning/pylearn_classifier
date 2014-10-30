@@ -9,7 +9,7 @@ import numpy as np
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
-
+import choose
 import paths
 
 CROP_BORDER_DIM = 15
@@ -73,7 +73,7 @@ class Plotter():
 
 def main():
 
-    dataset_file = paths.choose_from(paths.HEATMAPS_DATASET_DIR)
+    dataset_file = choose.choose_from(paths.HEATMAPS_DATASET_DIR)
     dataset = h5py.File(paths.HEATMAPS_DATASET_DIR + dataset_file)
 
     for i in range(dataset['rgbd_data'].shape[0]):
