@@ -21,10 +21,10 @@ def init_save_file(input_data_file, input_model_file):
 
 def main():
 
-    conv_model_name = paths.choose_from(paths.MODEL_DIR)
+    conv_model_name = choose.choose_from(paths.MODEL_DIR)
     conv_model_filepath = paths.MODEL_DIR + conv_model_name + "/cnn_model.pkl"
 
-    dataset_file = paths.choose_from(paths.RAW_TRAINING_DATASET_DIR)
+    dataset_file = choose.choose_from(paths.RAW_TRAINING_DATASET_DIR)
     raw_rgbd_filepath = paths.RAW_TRAINING_DATASET_DIR + dataset_file
 
     save_filepath = init_save_file(dataset_file, conv_model_name)

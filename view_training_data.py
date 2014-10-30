@@ -1,9 +1,10 @@
 
 import paths
+import choose
 import matplotlib.pyplot as plt
 import h5py
 
-dataset_file = paths.choose_from(paths.PROCESSED_TRAINING_DATASET_DIR)
+dataset_file = choose.choose_from(paths.PROCESSED_TRAINING_DATASET_DIR)
 processed_rgbd_filepath = paths.PROCESSED_TRAINING_DATASET_DIR + dataset_file
 
 dataset = h5py.File(processed_rgbd_filepath)
