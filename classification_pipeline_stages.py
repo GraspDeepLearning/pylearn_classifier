@@ -328,11 +328,17 @@ class ConvolvePriors(ClassificationStage):
         dataset.create_dataset("convolved_heatmaps", shape, chunks=chunk_size)
 
     def _run(self, dataset, index):
-        heatmaps = dataset['normalized_heatmaps'][index]
-        img_in_shape = (416, 576)
-        l_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 0], img_in_shape)
-        palm_obs = scipy.misc.imresize(heatmaps[:, :, 1], img_in_shape)
-        r_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 2], img_in_shape)
+        heatmaps = dataset['rescaled_heatmaps'][index]
+        # img_in_shape = (416, 576)
+        # l_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 0], img_in_shape)
+        # palm_obs = scipy.misc.imresize(heatmaps[:, :, 1], img_in_shape)
+        # r_gripper_obs = scipy.misc.imresize(heatmaps[:, :, 2], img_in_shape)
+
+        l_gripper_obs = heatmaps[:, :, 0]
+        palm_obs = heatmaps[:, :, 1]
+        r_gripper_obs = heatmaps[:, :, 2]
+        img_in_shape = heatmaps.shape[:-1]
+
 
         img_in = np.zeros((1, 1, img_in_shape[0], img_in_shape[1]), dtype=np.float32)
 

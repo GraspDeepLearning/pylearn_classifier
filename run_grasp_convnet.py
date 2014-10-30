@@ -33,7 +33,7 @@ def main():
                  ("grasp_depth", GraspClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="depth_data")),
                  ("garmet", GarmetClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="rgbd_data"))]
 
-    pipeline = choose.choose(pipelines)
+    pipeline = choose.choose(pipelines, 'pipeline')
 
     pipeline.run()
 
