@@ -6,6 +6,7 @@ from pylearn2.datasets import preprocessing
 
 import hdf5_data_preprocessors
 import paths
+import choose
 
 
 def preprocess_grasp_dataset(attribs):
@@ -51,7 +52,7 @@ def preprocess_grasp_dataset(attribs):
 
 if __name__ == "__main__":
 
-    raw_data_filename = paths.choose_from(paths.RAW_TRAINING_DATASET_DIR)
+    raw_data_filename = choose.choose_from(paths.RAW_TRAINING_DATASET_DIR)
     raw_data_filepath = paths.RAW_TRAINING_DATASET_DIR + raw_data_filename
 
     preprocess_attribs = dict(sets=("train", "test", "valid"),
