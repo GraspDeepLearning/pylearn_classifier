@@ -7,7 +7,7 @@ from pylearn2.testing import skip
 from pylearn2.config import yaml_parse
 
 import paths
-
+import choose
 
 #helper to build up the save path from the name of the model and the current time.
 def get_save_path(model_template, dataset):
@@ -31,8 +31,8 @@ def get_save_path(model_template, dataset):
 #then modify the hyper_params to specify a save location as well as the dataset used.
 def build_model():
 
-    model_template = paths.choose_from(paths.MODEL_TEMPLATE_DIR)
-    dataset = paths.choose_from(paths.PROCESSED_TRAINING_DATASET_DIR)
+    model_template = choose.choose_from(paths.MODEL_TEMPLATE_DIR)
+    dataset = choose.choose_from(paths.PROCESSED_TRAINING_DATASET_DIR)
 
     model_template_yaml = open(paths.MODEL_TEMPLATE_DIR + model_template + "/model.yaml", 'r').read()
     hyper_params_file = open(paths.MODEL_TEMPLATE_DIR + model_template + "/hyper_params.yaml", 'r').read()
