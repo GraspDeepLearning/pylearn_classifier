@@ -79,13 +79,13 @@ def main():
     for i in range(dataset['rgbd_data'].shape[0]):
         rgbd_img = dataset['rgbd_data'][i]
         heatmaps = dataset['normalized_heatmaps'][i]
-        indepent_grasp_points = dataset["independent_grasp_points"][i]
-        convolved_heatmaps = dataset['convolved_heatmaps'][i]
-        dependent_grasp_points = dataset["dependent_grasp_points"][i]
-        palm_conv = dataset["p_convolved_heatmaps"][i]
-        l_conv = dataset["l_convolved_heatmaps"][i]
-        r_conv = dataset["r_convolved_heatmaps"][i]
-        best_grasp = dataset["best_grasp"][i]
+        #indepent_grasp_points = dataset["independent_grasp_points"][i]
+        #convolved_heatmaps = dataset['convolved_heatmaps'][i]
+        #dependent_grasp_points = dataset["dependent_grasp_points"][i]
+        #palm_conv = dataset["p_convolved_heatmaps"][i]
+        #l_conv = dataset["l_convolved_heatmaps"][i]
+        #r_conv = dataset["r_convolved_heatmaps"][i]
+        #best_grasp = dataset["best_grasp"][i]
 
         plotter1 = Plotter(1)
 
