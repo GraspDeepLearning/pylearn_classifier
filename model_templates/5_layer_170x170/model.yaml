@@ -120,10 +120,10 @@
              channel_name: 'valid_objective',
              save_path: "%(save_path)s/best_valid_objective_model.pkl"
         },
-        !obj:train_extension.RecordWeights {
+        !obj:train_extensions.RecordWeights {
             save_path: "%(save_path)s/weights/"
         },
-        !obj:train_extension.RecordCurrentModel {
+        !obj:train_extensions.RecordCurrentModel {
             save_path: "%(save_path)s/current_model.pkl"
         }
 
