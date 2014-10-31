@@ -118,10 +118,13 @@
     extensions:
         [!obj:pylearn2.train_extensions.best_params.MonitorBasedSaveBest {
              channel_name: 'valid_objective',
-             save_path: "%(save_path)s/cnn_model.pkl"
+             save_path: "%(save_path)s/best_valid_objective_model.pkl"
         },
-        !obj:record_weights_train_extension.RecordWeights {
+        !obj:train_extension.RecordWeights {
             save_path: "%(save_path)s/weights/"
+        },
+        !obj:train_extension.RecordCurrentModel {
+            save_path: "%(save_path)s/current_model.pkl"
         }
 
     ]
