@@ -21,19 +21,22 @@ def init_save_file(input_data_file, input_model_file):
 
 def main():
 
-    conv_model_name = paths.choose_from(paths.MODEL_DIR)
+    conv_model_name = choose.choose_from(paths.MODEL_DIR)
     conv_model_filepath = paths.MODEL_DIR + conv_model_name + "/cnn_model.pkl"
 
-    dataset_file = paths.choose_from(paths.RAW_TRAINING_DATASET_DIR)
+    dataset_file = choose.choose_from(paths.RAW_TRAINING_DATASET_DIR)
     raw_rgbd_filepath = paths.RAW_TRAINING_DATASET_DIR + dataset_file
 
     save_filepath = init_save_file(dataset_file, conv_model_name)
 
-    pipelines = [("grasp_rgbd", GraspClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="rgbd_data")),
-                 ("grasp_depth", GraspClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="depth_data")),
-                 ("garmet", GarmetClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="rgbd_data"))]
+    pipelines = [("grasp_rgbd", GraspClassificationPipeline),
+                 ("grasp_depth", GraspClassificationPipeline),
+                 ("garmet", GarmetClassificationPipeline)]
 
     pipeline = choose.choose(pipelines, 'pipeline')
+
+    pipeline = pipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="image")
+    #pipeline = pipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="depth_data")
 
     pipeline.run()
 

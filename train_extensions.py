@@ -4,6 +4,9 @@ import matplotlib.cm as cm
 import math
 import os
 
+import pylearn2.utils.serial
+
+
 class RecordWeights(TrainExtension):
 
     def __init__(self, save_path, skip_num=1):
@@ -56,3 +59,13 @@ class RecordWeights(TrainExtension):
         plt.close()
 
         self.current_weight_file_number += 1
+
+
+class RecordCurrentModel(TrainExtension):
+
+    def __init__(self, save_path):
+        self.save_path = save_path
+
+    def on_monitor(self, model, dataset, algorithm):
+        pylearn2.utils.serial.save(self.save_path, model, on_overwrite='backup')
+

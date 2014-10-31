@@ -58,7 +58,7 @@ class C01B_HDF5_Dataset(pylearn2.datasets.dataset.Dataset):
 
 class HDF5_Iterator():
 
-    def __init__(self, dataset,  batch_size, num_batches, mode, post_processors=[]):
+    def __init__(self, dataset,  batch_size, num_batches, mode, iterator_post_processors=[]):
 
         def validate_batch_size(batch_size, dataset):
             if not batch_size:
@@ -93,6 +93,13 @@ class HDF5_Iterator():
         subset_iterator_class = resolve_iterator_class(mode)
         self._subset_iterator = subset_iterator_class(dataset_size, batch_size, num_batches)
 
+        self.iterator_post_processors = iterator_post_processors
+
+        #low noise level everywhere
+        self.iterator_post_processors.append(GaussianNoisePostProcessor(.01, 0, .5))
+        #high noise not very often
+        self.iterator_post_processors.append(GaussianNoisePostProcessor(1, 0, .001))
+
     def __iter__(self):
         return self
 
@@ -107,10 +114,15 @@ class HDF5_Iterator():
         # in increasing order
         if isinstance(next_index, np.ndarray):
             next_index.sort()
-            #import IPython
-            #IPython.embed()
+
         batch_x = self.dataset.topo_view[:, :, :, next_index]
         batch_y = self.dataset.y[next_index, :]
+
+        for post_processor in self.iterator_post_processors:
+            batch_x, batch_y = post_processor.apply(batch_x, batch_y)
+
+        batch_x = np.array(batch_x, dtype=np.float32)
+        batch_y = np.array(batch_y, dtype=np.float32)
 
         return batch_x, batch_y
 
@@ -140,5 +152,23 @@ class HDF5_Iterator():
         return self._subset_iterator.stochastic
 
 
+class GaussianNoisePostProcessor():
 
+    def __init__(self, sigma=.2, mu=0, prob_noise_added=.2):
+        self.sigma = sigma
+        self.mu = mu
+        self.prob_noise_added = prob_noise_added
+
+    def apply(self, batch_x, batch_y):
+
+        #we only add noise to the locations where the mask is True
+        mask = np.random.rand(*batch_x.shape) < self.prob_noise_added
+
+        #this noise is centered around mu with standard dev sigma
+        noise = self.sigma * np.random.randn(*batch_x.shape) + self.mu
+
+        #apply noise where mask is true, zero otherwise
+        masked_noise = np.where(mask, noise, 0)
+
+        return batch_x + masked_noise, batch_y
 

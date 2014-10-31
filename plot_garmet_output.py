@@ -9,7 +9,7 @@ import numpy as np
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
-
+import choose
 import paths
 
 CROP_BORDER_DIM = 15
@@ -73,19 +73,19 @@ class Plotter():
 
 def main():
 
-    dataset_file = paths.choose_from(paths.HEATMAPS_DATASET_DIR)
+    dataset_file = choose.choose_from(paths.HEATMAPS_DATASET_DIR)
     dataset = h5py.File(paths.HEATMAPS_DATASET_DIR + dataset_file)
 
     for i in range(dataset['rgbd_data'].shape[0]):
         rgbd_img = dataset['rgbd_data'][i]
         heatmaps = dataset['normalized_heatmaps'][i]
-        indepent_grasp_points = dataset["independent_grasp_points"][i]
-        convolved_heatmaps = dataset['convolved_heatmaps'][i]
-        dependent_grasp_points = dataset["dependent_grasp_points"][i]
-        palm_conv = dataset["p_convolved_heatmaps"][i]
-        l_conv = dataset["l_convolved_heatmaps"][i]
-        r_conv = dataset["r_convolved_heatmaps"][i]
-        best_grasp = dataset["best_grasp"][i]
+        #indepent_grasp_points = dataset["independent_grasp_points"][i]
+        #convolved_heatmaps = dataset['convolved_heatmaps'][i]
+        #dependent_grasp_points = dataset["dependent_grasp_points"][i]
+        #palm_conv = dataset["p_convolved_heatmaps"][i]
+        #l_conv = dataset["l_convolved_heatmaps"][i]
+        #r_conv = dataset["r_convolved_heatmaps"][i]
+        #best_grasp = dataset["best_grasp"][i]
 
         plotter1 = Plotter(1)
 

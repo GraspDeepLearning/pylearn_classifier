@@ -1,7 +1,8 @@
 !obj:pylearn2.train.Train {
-    dataset: &train !obj:datasets.rgbd_c01b_dataset.get_dataset {
-        which_set: 'c01b_train',
-        dataset_filepath: %(dataset)s,
+    dataset: &train !obj:datasets.c01b_hdf5_dataset.C01B_HDF5_Dataset {
+        topo_view_key: 'c01b_train_patches',
+        y_key: 'c01b_train_patch_labels',
+        hdf5_filepath: %(dataset)s,
     },
     model: !obj:pylearn2.models.mlp.MLP {
         batch_size: %(batch_size)i,
@@ -78,15 +79,17 @@
         monitoring_batches: 5,
         monitoring_dataset:
             {
-               'valid' : !obj:datasets.rgbd_c01b_dataset.get_dataset {
-                              which_set: 'c01b_valid',
-                              dataset_filepath: %(dataset)s,
-                          },
-                'test'  : !obj:datasets.rgbd_c01b_dataset.get_dataset {
-                              which_set: 'c01b_test',
-                              dataset_filepath: %(dataset)s,
-                          }
+                 'valid' : !obj:datasets.c01b_hdf5_dataset.C01B_HDF5_Dataset {
+                                topo_view_key: 'c01b_valid_patches',
+                                y_key: 'c01b_valid_patch_labels',
+                                hdf5_filepath: %(dataset)s,
             },
+                 'test' : !obj:datasets.c01b_hdf5_dataset.C01B_HDF5_Dataset {
+                                topo_view_key: 'c01b_test_patches',
+                                y_key: 'c01b_test_patch_labels',
+                                hdf5_filepath: %(dataset)s,
+            }
+        },
         cost: !obj:pylearn2.costs.cost.SumOfCosts {
             costs: [
                 !obj:pylearn2.costs.cost.MethodCost {
@@ -115,10 +118,14 @@
     extensions:
         [!obj:pylearn2.train_extensions.best_params.MonitorBasedSaveBest {
              channel_name: 'valid_objective',
-             save_path: "%(save_path)s/cnn_model.pkl"
+             save_path: "%(save_path)s/best_valid_objective_model.pkl"
         },
-        !obj:record_weights_train_extension.RecordWeights {
+        !obj:train_extensions.RecordWeights {
             save_path: "%(save_path)s/weights/"
+        },
+        !obj:train_extensions.RecordCurrentModel {
+            save_path: "%(save_path)s/current_model.pkl"
         }
+
     ]
 }

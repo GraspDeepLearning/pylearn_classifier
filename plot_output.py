@@ -9,10 +9,8 @@ import numpy as np
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
-
 import paths
-
-CROP_BORDER_DIM = 15
+import choose
 
 
 class format_subplot():
@@ -68,12 +66,11 @@ class Plotter():
             plt.title(title)
             plt.hist(img, bins=10, alpha=0.5)
 
-        #plt.show()
 
 
 def main():
 
-    dataset_file = paths.choose_from(paths.HEATMAPS_DATASET_DIR)
+    dataset_file = choose.choose_from(paths.HEATMAPS_DATASET_DIR)
     dataset = h5py.File(paths.HEATMAPS_DATASET_DIR + dataset_file)
 
     for i in range(dataset['rgbd_data'].shape[0]):
