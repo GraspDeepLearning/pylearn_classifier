@@ -29,11 +29,14 @@ def main():
 
     save_filepath = init_save_file(dataset_file, conv_model_name)
 
-    pipelines = [("grasp_rgbd", GraspClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="rgbd_data")),
-                 ("grasp_depth", GraspClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="depth_data")),
-                 ("garmet", GarmetClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="rgbd_data"))]
+    pipelines = [("grasp_rgbd", GraspClassificationPipeline),
+                 ("grasp_depth", GraspClassificationPipeline),
+                 ("garmet", GarmetClassificationPipeline)]
 
     pipeline = choose.choose(pipelines, 'pipeline')
+
+    pipeline = pipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="image")
+    #pipeline = pipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="depth_data")
 
     pipeline.run()
 

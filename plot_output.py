@@ -81,14 +81,6 @@ def main():
         l_conv = dataset["l_convolved_heatmaps"][i]
         r_conv = dataset["r_convolved_heatmaps"][i]
 
-        plotter1 = Plotter(1)
-        
-        if rgbd_img.shape[-1] == 4:
-            plotter1.add_subplot('rgb', rgbd_img[:, :, 0:3])
-            plotter1.add_subplot('d', rgbd_img[:, :, 3])
-        else:
-            plotter1.add_subplot('d', rgbd_img[:,:,0])
-
         plotter2 = Plotter(2)
 
         plotter2.add_subplot('l_obs', heatmaps[:, :, 0]/heatmaps[:,:,0].max())
@@ -126,9 +118,20 @@ def main():
         rgbd_overlay[x_offset+ palm_out_x-10:x_offset+palm_out_x+10,y_offset+ palm_out_y-10:y_offset+palm_out_y+10, :] = 0
         rgbd_overlay[x_offset+ r_out_x-10:x_offset+r_out_x+10,y_offset+ r_out_y-10:y_offset+r_out_y+10, :] = 0
 
-        plotter1.add_subplot("convolved_overlay", rgbd_overlay[:, :, 0])
 
-        plotter1.show()
+        plotter1 = Plotter(1)
+
+        if rgbd_img.shape[-1] == 4:
+            plotter2.add_subplot('rgb', rgbd_img[:, :, 0:3])
+            plotter2.add_subplot('d', rgbd_img[:, :, 3])
+        else:
+            plotter2.add_subplot('d', rgbd_img[:,:,0])
+        if rgbd_img.shape[-1] == 4:
+            plotter2.add_subplot("convolved_overlay", rgbd_overlay[:, :, :-1])
+        else:
+            plotter2.add_subplot("convolved_overlay", rgbd_overlay[:, :, 0])
+
+        #plotter1.show()
         plotter2.show()
         plt.show()
 
