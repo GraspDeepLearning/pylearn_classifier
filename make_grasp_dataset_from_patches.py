@@ -56,7 +56,6 @@ if __name__ == "__main__":
     raw_data_filepath = paths.RAW_TRAINING_DATASET_DIR + raw_data_filename
 
     preprocess_attribs = dict(sets=("train", "test", "valid"),
-                              patch_shape=(170, 170),
                               raw_filepath=raw_data_filepath,
                               output_filepath=paths.PROCESSED_TRAINING_DATASET_DIR + 'processed_' + raw_data_filename)
 
