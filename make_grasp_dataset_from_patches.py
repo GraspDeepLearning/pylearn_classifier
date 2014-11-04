@@ -15,7 +15,7 @@ def preprocess_grasp_dataset(attribs):
 
     pipeline.items.append(hdf5_data_preprocessors.CopyInRaw(
         source_dataset_filepath=attribs["raw_filepath"],
-        input_keys=('patches', 'labels'),
+        input_keys=('rgbd_patches', 'rgbd_patch_labels'),
         output_keys=('patches', 'patch_labels')
     ))
 

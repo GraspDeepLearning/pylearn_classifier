@@ -63,7 +63,11 @@ class CopyInRaw(preprocessing.Preprocessor):
             output_key = self.output_keys[index]
             shape = self.source_dataset[input_key].shape
             dataset.create_dataset(output_key, shape, chunks=tuple([100] + list(shape[1:])))
-            dataset[output_key][:] = self.source_dataset[input_key]
+
+            for i in range(shape[0]):
+                if i % 1000 == 0:
+                    print str(i) + ' / ' + str(shape[0])
+                dataset[output_key][i] = self.source_dataset[input_key][i]
 
 
 class RandomizePatches(preprocessing.Preprocessor):
