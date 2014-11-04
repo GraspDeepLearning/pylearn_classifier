@@ -8,6 +8,28 @@ from pylearn2.linear.conv2d import Conv2D
 from pylearn2.space import Conv2DSpace, VectorSpace
 
 
+
+def get_layer_normalizer(kernel_shape, threshold):
+    normalizer = LayerNormalization(kernel_shape, threshold)
+    return normalizer.run
+
+class LayerNormalization():
+
+    def __init__(self, kernel_shape=9, threshold=1e-4):
+        self.kernel_shape = kernel_shape
+        self.threshold= threshold
+        self._normalization_function = None
+
+    def run(self, p):
+
+        if not self._normalization_function:
+            img_shape = p.shape
+            self._normalization_function = subtractive_divisive_lcn(p, img_shape, self.kernel_shape, self.threshold)
+
+        return self._normalization_function(p)
+
+
+
 def subtractive_divisive_lcn(input, img_shape, kernel_shape, threshold=1e-4):
     """
     Yann LeCun's local contrast normalization
@@ -16,9 +38,9 @@ def subtractive_divisive_lcn(input, img_shape, kernel_shape, threshold=1e-4):
 
     Parameters
     ----------
-    input : WRITEME
-    img_shape : WRITEME
-    kernel_shape : WRITEME
+    input : C01B
+    img_shape : wxh
+    kernel_shape : 9
     threshold : WRITEME
     """
     input = input.reshape((input.shape[0], input.shape[1], input.shape[2], 1))
