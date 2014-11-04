@@ -44,7 +44,7 @@ class Plotter():
         figure = plt.figure(self.figure_num)
         num_histograms = len(self.histograms)
         num_subplots = len(self.subplots)
-        y_dim = 2.0
+        y_dim = 4.0
         x_dim = math.ceil((num_subplots + num_histograms)/y_dim)
 
         for i in range(len(self.subplots)):
@@ -78,7 +78,7 @@ def main():
 
     for i in range(dataset['rgbd_data'].shape[0]):
         rgbd_img = dataset['rgbd_data'][i]
-        heatmaps = dataset['normalized_heatmaps'][i]
+        heatmaps = dataset['rescaled_heatmaps'][i]
         #indepent_grasp_points = dataset["independent_grasp_points"][i]
         #convolved_heatmaps = dataset['convolved_heatmaps'][i]
         #dependent_grasp_points = dataset["dependent_grasp_points"][i]
@@ -103,13 +103,34 @@ def main():
         #
         # plotter1.add_subplot("out", out)
         #
-        out = heatmaps[:, :, 0]
-        out_min = np.argmin(out)
-        out_x, out_y = (out_min / out.shape[1], out_min % out.shape[1])
-        out_min_plot = np.copy(out)
-        marker_size=1
-        out_min_plot[out_x-marker_size:out_x+marker_size, out_y-marker_size:out_y+marker_size] = 0
-        plotter1.add_subplot("out_min", out_min_plot)
+
+        titles = ['Right ankle',
+                  'Right knee',
+                  'Right hip',
+                  'Left hip',
+                  'Left knee',
+                  'Left ankle',
+                  'Right wrist',
+                  'Right elbow',
+                  'Right shoulder',
+                  'Left shoulder',
+                  'Left elbow',
+                  'Left wrist',
+                  'Neck',
+                  'Head top']
+        x_offset = 32
+        y_offset = 32
+        for i in range(14):
+            out = heatmaps[:, :, i]
+            out_min = np.argmin(out)
+            out_x, out_y = (out_min / out.shape[1], out_min % out.shape[1])
+            out_min_plot = np.copy(rgbd_img)
+
+            marker_size = 10
+
+            out_min_plot[x_offset + out_x-marker_size : x_offset + out_x+marker_size, y_offset + out_y-marker_size : y_offset + out_y+marker_size] = 0
+            #plotter1.add_subplot(titles[i], out_min_plot)
+            plotter1.add_subplot(titles[i], out)
 
         plotter1.show()
 
