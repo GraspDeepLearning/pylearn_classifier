@@ -84,6 +84,10 @@ def main():
     #insert the hyper parameters into the model template
     model = model_template_yaml % hyper_params_dict
 
+    import IPython
+    IPython.embed()
+    assert False
+
     #train the model.
     train_convolutional_network(model)
 

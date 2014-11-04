@@ -19,7 +19,7 @@
                      pool_shape: [2, 2],
                      pool_stride: [2, 2],
                      W_lr_scale: 10.0,
-                     tied_b: True
+                     tied_b: True,
                  },!obj:pylearn2.models.mlp.ConvRectifiedLinear {
                      layer_name: 'h1',
                      output_channels: %(output_channels_h1)i,
