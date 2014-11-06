@@ -65,7 +65,10 @@ class RecordCurrentModel(TrainExtension):
 
     def __init__(self, save_path):
         self.save_path = save_path
+        self.save_count = 0
 
     def on_monitor(self, model, dataset, algorithm):
-        pylearn2.utils.serial.save(self.save_path, model, on_overwrite='backup')
+        if self.save_count % 10 == 0:
+            pylearn2.utils.serial.save(self.save_path, model, on_overwrite='backup')
+        self.save_count += 1
 
