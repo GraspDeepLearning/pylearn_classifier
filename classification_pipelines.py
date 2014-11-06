@@ -13,8 +13,10 @@ class ClassificationPipeline():
         h5py_file = h5py.File(in_filepath)
         if 'rgbd_data' in h5py_file.keys():
             self._num_images = h5py_file['rgbd_data'].shape[0]
-        else:
+        elif 'rgbd_data' in h5py_file.keys():
             self._num_images = h5py_file['image'].shape[0]
+        else:
+            self._num_images = h5py_file['images'].shape[0]
         self._pipeline_stages = []
 
     def add_stage(self, stage):
@@ -55,6 +57,9 @@ class GarmetClassificationPipeline(ClassificationPipeline):
                  use_float_64=False))
         self.add_stage(Classification(model_filepath))
         self.add_stage(HeatmapNormalization())
+        self.add_stage(Rescale(in_key="normalized_heatmaps",
+                           out_key="rescaled_heatmaps",
+                           model_filepath=model_filepath))
 
 
 class GraspClassificationPipeline(ClassificationPipeline):

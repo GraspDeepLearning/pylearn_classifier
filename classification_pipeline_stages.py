@@ -46,7 +46,7 @@ class ClassificationStage():
 
 class CopyInRaw(ClassificationStage):
 
-    def __init__(self, raw_rgbd_dataset_filepath, in_key='rgbd_data', out_key='rgbd_data'):
+    def __init__(self, raw_rgbd_dataset_filepath, in_key='images', out_key='rgbd_data'):
         self.raw_rgbd_dataset = h5py.File(raw_rgbd_dataset_filepath)
         self.in_key = in_key
         self.out_key = out_key
@@ -269,15 +269,40 @@ class Rescale(ClassificationStage):
 
         def expand(heatmap, rescale_factor):
             shape = heatmap.shape
-            new_shape = (shape[0] * rescale_factor[0], shape[1] * rescale_factor[1], shape[2])
+            new_shape = (shape[0] * rescale_factor[0], shape[1] * rescale_factor[1])
             return scipy.misc.imresize(heatmap, new_shape)
 
-        heatmap = dataset[self.in_key][index]
-        for i in range(len(self.pool_shapes)):
-            heatmap = expand(heatmap, self.pool_strides[i])
-            heatmap = expand(heatmap, self.kernel_strides[i])
 
-        return heatmap
+        heatmap = dataset[self.in_key][index]
+        num_conv_layers = len(self.pool_shapes)
+        num_channels = heatmap.shape[-1]
+
+        # Intial scale factor.
+        scale_factor = [1, 1]
+        for layer_index in range(num_conv_layers):
+            scale_factor[0] = scale_factor[0] * self.kernel_strides[layer_index][0] * self.pool_strides[layer_index][0]
+            scale_factor[1] = scale_factor[1] * self.kernel_strides[layer_index][1] * self.pool_strides[layer_index][1]
+
+        x_dim = heatmap.shape[0] * scale_factor[0]
+        y_dim = heatmap.shape[1] * scale_factor[1]
+
+        heatmap_out = np.zeros((x_dim, y_dim, num_channels))
+
+        for channel_index in range(num_channels):
+            heatmap_out[:,:,channel_index] = expand(heatmap[:,:,channel_index], scale_factor)
+
+        """
+                heatmap_out = np.zeros(heatmap.shape * scale_factor)
+                #heatmap at this point is np.array of dim (20,20,14)
+                for layer_index in range(num_conv_layers):
+                    for channel_index in range(num_channels):
+                        expanded_heatmap = np.zeros()
+                        heatmap[:,:,channel_index] = expand(heatmap[:,:,channel_index], self.pool_strides[layer_index])
+                        heatmap = expand(heatmap, self.kernel_strides[layer_index])
+
+                #we want heatmap at this point to be (
+        """
+        return heatmap_out
 
 
 class ConvolvePriors(ClassificationStage):
