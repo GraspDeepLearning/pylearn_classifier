@@ -13,8 +13,10 @@ class ClassificationPipeline():
         h5py_file = h5py.File(in_filepath)
         if 'rgbd_data' in h5py_file.keys():
             self._num_images = h5py_file['rgbd_data'].shape[0]
-        elif 'rgbd_data' in h5py_file.keys():
+        elif 'image' in h5py_file.keys():
             self._num_images = h5py_file['image'].shape[0]
+        elif 'rgbd' in h5py_file.keys():
+            self._num_images = h5py_file['rgbd'].shape[0]
         else:
             self._num_images = h5py_file['images'].shape[0]
         self._pipeline_stages = []
@@ -24,7 +26,7 @@ class ClassificationPipeline():
 
     def run(self):
 
-        for index in range(self._num_images):
+        for index in range(20):#range(self._num_images):
 
             print
             print 'starting ' + str(index) + " of " + str(self._num_images)
@@ -76,10 +78,57 @@ class GraspClassificationPipeline(ClassificationPipeline):
                  use_float_64=False))
         self.add_stage(Classification(model_filepath))
         self.add_stage(HeatmapNormalization())
+        #
+        self.add_stage(Rescale(in_key="normalized_heatmaps",
+                           out_key="rescaled_heatmaps",
+                           model_filepath=model_filepath))
+        #
+        priors_filepath = paths.PRIORS_DIR + 'saxena_all_priors.h5'
+        self.add_stage(ConvolveGraspPriors(priors_filepath))
+        self.add_stage(MultiplyPriors())
+
+
+class BarrettGraspClassificationPipeline(ClassificationPipeline):
+
+    def __init__(self, out_filepath, in_filepath, model_filepath, input_key):
+
+        ClassificationPipeline.__init__(self, out_filepath, in_filepath)
+
+        self.add_stage(CopyInRaw(in_filepath, in_key=input_key, out_key='rgbd_data'))
+        self.add_stage(LecunSubtractiveDivisiveLCN(in_key='rgbd_data', out_key='rgbd_data_normalized'))
+        self.add_stage(FeatureExtraction(model_filepath,
+                 in_key='rgbd_data_normalized',
+                 out_key='extracted_features',
+                 use_float_64=False))
+        self.add_stage(Classification(model_filepath))
+        self.add_stage(Rescale(in_key="heatmaps",
+                           out_key="rescaled_heatmaps",
+                           model_filepath=model_filepath))
+
+        priors_filepath = paths.PRIORS_DIR + 'just_tobasco_priors.h5'
+        self.add_stage(ConvolveBarrettPriors(priors_filepath))
+        self.add_stage(BarrettMultiplyPriors('convolved_heatmaps', 'independent_x_priors'))
+
+
+class ConstrainedGraspClassificationPipeline(ClassificationPipeline):
+
+    def __init__(self, out_filepath, in_filepath, model_filepath, input_key):
+
+        ClassificationPipeline.__init__(self, out_filepath, in_filepath)
+
+        self.add_stage(CopyInRaw(in_filepath, in_key=input_key, out_key='rgbd_data'))
+        self.add_stage(LecunSubtractiveDivisiveLCN(in_key='rgbd_data', out_key='rgbd_data_normalized'))
+        self.add_stage(FeatureExtraction(model_filepath,
+                 in_key='rgbd_data_normalized',
+                 out_key='extracted_features',
+                 use_float_64=False))
+        self.add_stage(Classification(model_filepath))
+
+        self.add_stage(ConstrainHeatmaps(in_key="heatmaps",
+                                         out_key="constrained_heatmaps"))
 
         self.add_stage(Rescale(in_key="normalized_heatmaps",
                            out_key="rescaled_heatmaps",
                            model_filepath=model_filepath))
 
-        priors_filepath = paths.PRIORS_DIR + 'saxena_rect_priors.h5'
-        self.add_stage(ConvolvePriors(priors_filepath))
+
