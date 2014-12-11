@@ -98,7 +98,7 @@ class HDF5_Iterator():
         #low noise level everywhere
         self.iterator_post_processors.append(GaussianNoisePostProcessor(.01, 0, .5))
         #high noise not very often
-        self.iterator_post_processors.append(GaussianNoisePostProcessor(1, 0, .001))
+        #self.iterator_post_processors.append(GaussianNoisePostProcessor(.1, 0, .001))
 
     def __iter__(self):
         return self
