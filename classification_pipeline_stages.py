@@ -305,7 +305,7 @@ class Rescale(ClassificationStage):
         return heatmap_out
 
 
-class ConvolvePriors(ClassificationStage):
+class ConvolveHorizontalGraspPriors(ClassificationStage):
 
     def __init__(self, priors_filepath):
         self.priors = h5py.File(priors_filepath)
@@ -403,131 +403,231 @@ class ConvolvePriors(ClassificationStage):
         dataset['convolved_heatmaps'][index, :, :, 2] = r_gripper_out
 
 
-# class CalculateMax(GraspClassificationStage):
-#
-#
-#     def run(self, dataset, index):
-#
-#         out_shape = dataset['convolved_heatmaps'][index][:, :, 0].shape
-#         l_gripper_out = dataset['convolved_heatmaps'][index][:, :, 0]
-#         palm_out = dataset['convolved_heatmaps'][index][:, :, 1]
-#         r_gripper_out = dataset['convolved_heatmaps'][index][:, :, 2]
-#         rgb_with_grasp = dataset["best_grasp"][index]
-#
-#         img_in_shape = dataset["rgbd_data"][index, :, :, 0].shape
-#         x_border = (img_in_shape[0]-out_shape[0])/2
-#         y_border = (img_in_shape[1]-out_shape[1])/2
-#
-#         rgb_with_grasp[:] = np.copy(dataset["rgbd_data"][index, x_border:-x_border - 1, y_border:-y_border - 1, 0:3])
-#
-#         l_max = np.argmax(l_gripper_out)
-#         p_max = np.argmax(palm_out)
-#         r_max = np.argmax(r_gripper_out)
-#
-#         lim = out_shape[1]
-#         l_max_x, l_max_y = (l_max / lim, l_max % lim)
-#         p_max_x, p_max_y = (p_max / lim, p_max % lim)
-#         r_max_x, r_max_y = (r_max / lim, r_max % lim)
-#
-#         try:
-#             rgb_with_grasp[l_max_x-5:l_max_x + 5, l_max_y-5:l_max_y + 5] = [0, 0, 0]
-#             rgb_with_grasp[p_max_x-5:p_max_x + 5, p_max_y-5:p_max_y + 5] = [0, 0, 0]
-#             rgb_with_grasp[r_max_x-5:r_max_x + 5, r_max_y-5:r_max_y + 5] = [0, 0, 0]
-#         except:
-#             pass
-#
-#         dataset['best_grasp'][index] = rgb_with_grasp
-#
-#
-#
-#
-#
-#
-# class CalculateTopFive(GraspClassificationStage):
-#
-#     def __init__(self, input_key='convolved_heatmaps',
-#                  output_key='dependent_grasp_points',
-#                  border_dim=15):
-#         self.input_key = input_key
-#         self.output_key = output_key
-#         self.border_dim = border_dim
-#
-#     def get_local_minima(self, output):
-#         output2 = np.copy(output)
-#         e = np.zeros(output2.shape)
-#         extrema = argrelextrema(output2, np.greater)
-#         for i in range(len(extrema[0])):
-#             e[extrema[0][i], extrema[1][i]] = output[extrema[0][i], extrema[1][i]]
-#
-#         return e
-#
-#     def get_local_minima_above_threshold(self, heatmap):
-#         extrema = self.get_local_minima(heatmap)
-#
-#         extrema_average = extrema.sum()/(extrema != 0).sum()
-#         #threshold is mean of extrema excluding zeros times a scaling factor
-#         threshold = extrema_average - .05 * extrema_average
-#
-#         #set anything negative to 0
-#         extrema = np.where(extrema <= threshold, extrema, 0)
-#
-#         return extrema
-#
-#     def get_scaled_extremas(self, rgbd_img, heatmaps, extremas):
-#         #extrema imposed on input:
-#         border_dim = (2*self.border_dim, 2*self.border_dim)
-#         extremas_with_border_shape = [sum(x) for x in zip(extremas.shape, border_dim)]
-#         extremas_with_border = np.zeros(extremas_with_border_shape)
-#
-#         extremas_with_border[self.border_dim:-self.border_dim, self.border_dim:-self.border_dim] = heatmaps[:, :]
-#         scaled_extremas = scipy.misc.imresize(extremas_with_border, rgbd_img.shape[0:2], interp='nearest')
-#
-#         return scaled_extremas
-#
-#     def run(self, dataset, index):
-#
-#         heatmaps = dataset[self.input_key][index]
-#         rgbd_img = dataset['rgbd_data'][index]
-#
-#         grasp_points_img = copy.deepcopy(rgbd_img[:, :, 0:3])
-#
-#         for heatmap_index in range(3):
-#             heatmap = heatmaps[:, :, heatmap_index]
-#
-#
-#             local_minima = self.get_local_minima_above_threshold(heatmap)
-#             local_minima = self.get_local_minima(heatmap)
-#             scaled_extremas = self.get_scaled_extremas(rgbd_img, heatmap, local_minima)
-#
-#             extrema_dict = dict((e, i)
-#                                for i, e in np.ndenumerate(scaled_extremas)
-#                                if e > 0.0)
-#
-#             sorted_extremas = sorted(extrema_dict, key=lambda key: key, reverse=True)
-#
-#             for j, extrema in enumerate(sorted_extremas[-20:]):
-#
-#                 max_extrema = extrema_dict[extrema]
-#                 heat_val = (j * 254 / 5)
-#
-#                 #top
-#                 for i in range(-5, 5):
-#                     grasp_points_img[max_extrema[0]-5, max_extrema[1] + i][:3] = [0.0, heat_val, 0.0]
-#                     grasp_points_img[max_extrema[0]-4, max_extrema[1] + i][:3] = [0.0, heat_val, 0.0]
-#                 #bot
-#                 for i in range(-5, 5):
-#                     grasp_points_img[max_extrema[0]+4, max_extrema[1] + i][:3] = [0.0, heat_val, 0.0]
-#                     grasp_points_img[max_extrema[0]+5, max_extrema[1] + i][:3] = [0.0, heat_val, 0.0]
-#                 #left
-#                 for i in range(-5, 5):
-#                     grasp_points_img[max_extrema[0]+i, max_extrema[1]-5][:3] = [0.0, heat_val, 0.0]
-#                     grasp_points_img[max_extrema[0]+i, max_extrema[1]-4][:3] = [0.0, heat_val, 0.0]
-#                 #right
-#                 for i in range(-5, 5):
-#                     grasp_points_img[max_extrema[0]+i, max_extrema[1]+5][:3] = [0.0, heat_val, 0.0]
-#                     grasp_points_img[max_extrema[0]+i, max_extrema[1]+4][:3] = [0.0, heat_val, 0.0]
-#
-#             dataset[self.output_key][index, heatmap_index] = grasp_points_img
+class ConvolveGraspPriors(ClassificationStage):
+
+    def __init__(self, priors_filepath):
+        self.out_key = 'convolved_heatmaps'
+        dset = h5py.File(priors_filepath)
+        priors = dset['priors']
+        self.num_grasp_types = priors.shape[0]
+        self.num_priors_per_grasp = priors.shape[1]
+
+
+        w_shape = (self.num_priors_per_grasp, 1, 100, 100)
+        self.fs = []
+
+        for i in range(self.num_grasp_types):
+            input = theano.tensor.tensor4(name='input' + str(i))
+
+            w = np.zeros(w_shape)
+            w[:, 0] = priors[i, :, 100:200, 100:200]
+
+            W = theano.shared(np.asarray(w, dtype=input.dtype), name='W' + str(i))
+            conv_out = conv.conv2d(input, W)
+            self.fs.append(theano.function([input], conv_out))
+
+    def dataset_inited(self,dataset):
+        return 'convolved_heatmaps' in dataset.keys()
+
+    def init_dataset(self, dataset):
+
+        convolved_heatmaps = self._run(dataset, 0)
+
+        shape = (900, convolved_heatmaps.shape[0], convolved_heatmaps.shape[1], convolved_heatmaps.shape[2], convolved_heatmaps.shape[3])
+        chunk_size = (10, convolved_heatmaps.shape[0], convolved_heatmaps.shape[1], convolved_heatmaps.shape[2], convolved_heatmaps.shape[3])
+
+        dataset.create_dataset("convolved_heatmaps", shape)
+
+
+    def _run(self, dataset, index):
+        heatmaps = dataset['rescaled_heatmaps'][index]
+
+        img_in_shape = heatmaps.shape[:-1]
+        num_heatmaps = heatmaps.shape[-1]
+
+        img_in = np.zeros((1, 1, img_in_shape[0], img_in_shape[1]), dtype=np.float32)
+
+        out = None
+
+        #we have a heatmap for each grasp type for each finger
+        #we have priors for each grasp type for each finger for each finger
+        for i in range(num_heatmaps):
+            conv_function = self.fs[i / self.num_priors_per_grasp]
+            img_in[:, :] = heatmaps[:, :, i]
+            convolved_heatmaps = conv_function(img_in)
+            if out is None:
+                out = np.zeros((num_heatmaps, self.num_priors_per_grasp, convolved_heatmaps.shape[-2], convolved_heatmaps.shape[-1]))
+
+            out[i] = convolved_heatmaps[0]
+
+        return out
+
+    # def run(self, dataset, index):
+    #     convolved_priors = self._run(dataset,index)
+    #     dataset['convolved_priors'][index] = convolved_priors
+
+
+class ConvolveBarrettPriors(ClassificationStage):
+
+    def __init__(self, priors_filepath):
+        self.out_key = 'convolved_heatmaps'
+        dset = h5py.File(priors_filepath)
+        priors = dset['priors']
+        self.num_grasp_types = priors.shape[0]
+        self.num_priors_per_grasp = priors.shape[1]
+
+        prior_xdim = priors.shape[-2]
+        prior_ydim = priors.shape[-1]
+
+        w_shape = (self.num_priors_per_grasp**2, 1, 100, 100)
+        self.fs = []
+
+        for i in range(self.num_grasp_types):
+
+            input = theano.tensor.tensor4(name='input' + str(i))
+            w = np.zeros(w_shape)
+
+            for j in range(self.num_priors_per_grasp):
+                for k in range(self.num_priors_per_grasp):
+
+                    w[j*self.num_priors_per_grasp + k, 0] = priors[i, j, k, int(prior_xdim/2.0-50):int(prior_xdim/2.0+50), int(prior_ydim/2.0-50):int(prior_ydim/2.0+50)]
+
+            W = theano.shared(np.asarray(w, dtype=input.dtype), name='W' + str(i))
+            conv_out = conv.conv2d(input, W)
+            self.fs.append(theano.function([input], conv_out))
+
+    def dataset_inited(self,dataset):
+        return 'convolved_heatmaps' in dataset.keys()
+
+    def init_dataset(self, dataset):
+
+        convolved_heatmaps = self._run(dataset, 0)
+        shape = (900, convolved_heatmaps.shape[0], convolved_heatmaps.shape[1], convolved_heatmaps.shape[2], convolved_heatmaps.shape[3],convolved_heatmaps.shape[4])
+        chunk_size = (10, convolved_heatmaps.shape[0], convolved_heatmaps.shape[1], convolved_heatmaps.shape[2], convolved_heatmaps.shape[3],convolved_heatmaps.shape[4])
+
+        dataset.create_dataset("convolved_heatmaps", shape)
+
+
+    def _run(self, dataset, index):
+        heatmaps = dataset['rescaled_heatmaps'][index]
+
+        img_in_shape = heatmaps.shape[:-1]
+        num_heatmaps = heatmaps.shape[-1]
+
+        img_in = np.zeros((1, 1, img_in_shape[0], img_in_shape[1]), dtype=np.float32)
+
+        out = None
+
+        #we have a heatmap for each grasp type for each finger
+        #we have priors for each grasp type for each finger for each finger
+        for i in range(num_heatmaps):
+            conv_function = self.fs[i / self.num_priors_per_grasp]
+            img_in[:, :] = heatmaps[:, :, i]
+            convolved_heatmaps = conv_function(img_in)
+
+            if out is None:
+                #12 heatmaps, #4 convolutions for each heatmap #heatmapxdim, #heatmapydim
+                out = np.zeros((num_heatmaps, self.num_priors_per_grasp, self.num_priors_per_grasp, convolved_heatmaps.shape[-2], convolved_heatmaps.shape[-1]))
+
+            for j in range(self.num_priors_per_grasp):
+                for k in range(self.num_priors_per_grasp):
+                    index = j * self.num_priors_per_grasp + k
+                    out[i, j, k] = convolved_heatmaps[0, index]
+
+        return out
+
+
+
+class BarrettMultiplyPriors(ClassificationStage):
+
+    def dataset_inited(self, dataset):
+        return 'independent_x_priors' in dataset.keys()
+
+    def init_dataset(self, dataset):
+        independent_x_priors = self._run(dataset, 0 )
+
+        shape = (900, independent_x_priors.shape[0], independent_x_priors.shape[1], independent_x_priors.shape[2])
+        dataset.create_dataset('independent_x_priors', shape)
+
+    def _run(self, dataset, index):
+        priors = dataset['convolved_heatmaps'][index]
+        independent = dataset['rescaled_heatmaps'][index]
+
+        num_heatmaps = priors.shape[0]
+        num_vc = priors.shape[1]
+
+        grasp_priors_xdim = priors.shape[-2]
+        grasp_priors_ydim = priors.shape[-1]
+
+        independent_finger_pos_xdim = independent.shape[0]
+        independent_finger_pos_ydim = independent.shape[1]
+
+        x_border = (independent_finger_pos_xdim-grasp_priors_xdim)/2
+        y_border = (independent_finger_pos_ydim-grasp_priors_ydim)/2
+
+        out = np.zeros((num_heatmaps, grasp_priors_xdim, grasp_priors_ydim))
+
+        for current_heatmap_index in range(num_heatmaps):
+
+            independent_finger_pos = independent[:, :, current_heatmap_index]
+            independent_finger_pos_cropped = independent_finger_pos[x_border:-x_border-1, y_border:-y_border-1]
+
+            out[current_heatmap_index] = independent_finger_pos_cropped
+
+            vc_index_for_heatmap = current_heatmap_index % num_vc
+            for j in range(num_vc):
+
+                out *= priors[current_heatmap_index, j, vc_index_for_heatmap]
+
+
+        return out
+
+
+
+
+
+
+
+class MultiplyPriors(ClassificationStage):
+
+    def __init__(self):
+        pass
+
+    def dataset_inited(self, dataset):
+        return 'independent_x_priors' in dataset.keys()
+
+    def init_dataset(self, dataset):
+        independent_x_priors = self._run(dataset, 0 )
+
+        shape = (900, independent_x_priors[0], independent_x_priors[1], independent_x_priors[2])
+        dataset.create_dataset('independent_x_priors', shape)
+
+    def _run(self, dataset, index):
+        priors = dataset['convolved_heatmaps'][index]
+        independent = dataset['rescaled_heatmaps'][index]
+
+        num_heatmaps = independent.shape[-1]
+        for i in range(num_heatmaps):
+
+            #grasp_priors shape (9,253,413)
+            grasp_priors = priors[0]
+
+            #independent_finger_pos.shape (352, 512)
+            independent_finger_pos = independent[i]
+
+            x_border = (independent_finger_pos[0]-grasp_priors[1])/2
+            y_border = (independent_finger_pos[1]-grasp_priors[2])/2
+
+            independent_finger_pos_cropped = independent_finger_pos[x_border:-x_border-1, y_border:-y_border-1]
+
+            num_prior_maps = grasp_priors.shape[0]
+            for j in range(num_prior_maps):
+                #out = independent_finger_pos_cropped *
+                #  Need to multiply independent by the priors for the other fingers.
+                print 'not done.'
+
+
+
 
 
 

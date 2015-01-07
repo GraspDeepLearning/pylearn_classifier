@@ -1,6 +1,6 @@
-num_input_channels: 3
-num_output_channels: 14
-batch_size: 20
+
+num_input_channels: 4
+batch_size: 10
 output_channels_h0: 96
 output_channels_h1: 256
 output_channels_h2: 512

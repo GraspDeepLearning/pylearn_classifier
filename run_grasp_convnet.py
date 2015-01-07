@@ -31,11 +31,14 @@ def main():
 
     pipelines = [("grasp_rgbd", GraspClassificationPipeline),
                  ("grasp_depth", GraspClassificationPipeline),
-                 ("garmet", GarmetClassificationPipeline)]
+                 #("constrained_grasp", ConstrainedGraspClassificationPipeline),
+                 ("garmet", GarmetClassificationPipeline),
+                 ("barrett", BarrettGraspClassificationPipeline)
+                ]
 
     pipeline = choose.choose(pipelines, 'pipeline')
 
-    pipeline = pipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="image")
+    pipeline = pipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="rgbd")
     #pipeline = pipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="depth_data")
 
     pipeline.run()

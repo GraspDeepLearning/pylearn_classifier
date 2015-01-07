@@ -162,9 +162,9 @@ class SplitGraspPatches(preprocessing.Preprocessor):
     def apply(self, dataset, can_fit=False):
         print self
         #check if we have already extracted patches for this set of patch_labels
-        if self.output_keys[0][0] in dataset.keys():
-            print "skipping split_patches, this has already been run"
-            return
+        # if self.output_keys[0][0] in dataset.keys():
+        #     print "skipping split_patches, this has already been run"
+        #     return
 
         for index in range(len(self.output_keys)):
             output_key_pair = self.output_keys[index]
@@ -174,11 +174,17 @@ class SplitGraspPatches(preprocessing.Preprocessor):
             num_patches = math.floor(self.output_weights[index] * dataset[self.source_keys[0]].shape[0])
             num_patches = num_patches - (num_patches % 20)
             patch_shape = dataset[self.source_keys[0]].shape[1:4]
+            num_labels = dataset[self.source_keys[1]].shape[-1]
 
             start_range = math.floor(sum(self.output_weights[:index])*dataset[self.source_keys[0]].shape[0])
 
-            dataset[patch_key] = dataset[self.source_keys[0]][int(start_range):int(start_range+num_patches)]
-            dataset[label_key] = dataset[self.source_keys[1]][int(start_range):int(start_range+num_patches)]
+            dataset.create_dataset(patch_key, (int(num_patches), patch_shape[0], patch_shape[1], patch_shape[2]), chunks=(10, patch_shape[0], patch_shape[1], patch_shape[2]))
+            dataset.create_dataset(label_key, (int(num_patches), num_labels), chunks=(10, num_labels))
+
+            for i in range(int(num_patches)):
+
+                dataset[patch_key][i] = dataset[self.source_keys[0]][int(start_range) + i]
+                dataset[label_key][i] = dataset[self.source_keys[1]][int(start_range) + i]
 
 
 class ExtractGraspPatches(preprocessing.Preprocessor):

@@ -14,40 +14,41 @@
         layers: [!obj:pylearn2.models.mlp.ConvRectifiedLinear {
                      layer_name: 'h0',
                      output_channels: %(output_channels_h0)i,
-                     irange: .05,
+                     irange: .005,
                      kernel_shape: [11, 11],
                      kernel_stride: [2, 2],
                      pool_shape: [2, 2],
                      pool_stride: [2, 2],
-                     tied_b: True
+                     tied_b: True,
+                     W_lr_scale: 10.0,
                  },!obj:pylearn2.models.mlp.ConvRectifiedLinear {
                      layer_name: 'h1',
                      output_channels: %(output_channels_h1)i,
-                     irange: .05,
+                     irange: .005,
                      kernel_shape: [3, 3],
                      pool_shape: [2, 2],
                      pool_stride: [2, 2],
-                     tied_b: True
+                     tied_b: True,
                  },!obj:pylearn2.models.mlp.ConvRectifiedLinear {
                      layer_name: 'h2',
                      output_channels: %(output_channels_h2)i,
-                     irange: .05,
+                     irange: .005,
                      kernel_shape: [3, 3],
                      pool_shape: [1, 1],
                      pool_stride: [1, 1],
-                     tied_b: True
+                     tied_b: True,
                  },!obj:pylearn2.models.mlp.ConvRectifiedLinear {
                      layer_name: 'h3',
                      output_channels: %(output_channels_h3)i,
-                     irange: .05,
+                     irange: .005,
                      kernel_shape: [3, 3],
                      pool_shape: [1, 1],
                      pool_stride: [1, 1],
-                     tied_b: True
+                     tied_b: True,
                  },!obj:pylearn2.models.mlp.ConvRectifiedLinear {
                      layer_name: 'h4',
                      output_channels: %(output_channels_h4)i,
-                     irange: .05,
+                     irange: .005,
                      kernel_shape: [3, 3],
                      tied_b: True,
                      pool_shape: [1, 1],
@@ -55,25 +56,23 @@
                  },!obj:pylearn2.models.mlp.Linear {
                     layer_name: 'y0',
                     dim: 4096,
-                    irange: .05,
-                    W_lr_scale: 0.1,
+                    irange: .005,
                  },
                  !obj:pylearn2.models.mlp.Linear {
                     layer_name: 'y1',
                     dim: 4096,
-                    irange: .05,
-                    W_lr_scale: 0.1,
+                    irange: .005,
                  },
                  !obj:pylearn2.models.mlp.Linear {
                     layer_name: 'y2',
                     dim: %(num_output_channels)i,
-                    irange: .05,
+                    irange: .005,
                  }
                 ],
     },
     algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
         batch_size: %(batch_size)i,
-        learning_rate: 0.01,
+        learning_rate: 0.1,
         batches_per_iter: 20,
         monitoring_batch_size: 20,
         monitoring_batches: 10,
@@ -94,15 +93,15 @@
             costs: [
                 !obj:pylearn2.costs.cost.MethodCost {
                     method: 'cost_from_X'
-                }, !obj:pylearn2.costs.mlp.L1WeightDecay {
-                        coeffs: [ 0.0000005,
-                                  0.0000005,
-                                  0.0000005,
-                                  0.0000005,
-                                  0.0000005,
-                                  0.0000005,
-                                  0.0000005,
-                                  0.0000005]
+                },!obj:pylearn2.costs.mlp.L1WeightDecay {
+                        coeffs: [ 0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005]
                 }
             ]
         },
