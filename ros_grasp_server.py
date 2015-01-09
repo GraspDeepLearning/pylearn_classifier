@@ -21,6 +21,8 @@ import h5py
 import time
 import pickle
 
+from sensor_msgs.msg import JointState
+
 from grasp_priors import GraspPriorsList
 
 
@@ -115,7 +117,17 @@ class GraspServer:
             grasp_msg.pose.orientation.z = quat.z
             grasp_msg.pose.orientation.w = quat.w
 
-            grasp_msg.joint_values = joint_values
+            jv = JointState()
+            jv.name = ["bhand/finger_1/prox_joint",
+                       "bhand/finger_1/med_joint",
+                       "bhand/finger_1/dist_joint",
+                       "bhand/finger_2/prox_joint"
+                       "bhand/finger_2/med_joint",
+                       "bhand/finger_2/dist_joint",
+                       "bhand/finger_3/med_joint",
+                       "bhand/finger_3/dist_joint"]
+            jv.position = joint_values
+            grasp_msg.joint_values = jv
             grasp_msg.grasp_enery = grasp_energy
             grasp_msg.grasp_type = grasp_type
 
