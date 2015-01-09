@@ -10,6 +10,7 @@ find_package(catkin REQUIRED
   std_msgs
   gdl_grasp_msgs
   geometry_msgs
+  sensor_msgs
   message_generation
 )
 
