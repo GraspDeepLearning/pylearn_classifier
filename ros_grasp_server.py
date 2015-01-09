@@ -140,7 +140,7 @@ class GraspServer:
                        "bhand/finger_3/dist_joint"]
             jv.position = joint_values
             grasp_msg.joint_values = jv
-            grasp_msg.grasp_enery = grasp_energy
+            grasp_msg.grasp_energy = grasp_energy
 
             grasp_msg.grasp_type = grasp_type
 
