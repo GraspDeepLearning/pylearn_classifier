@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import rospy
-from pylearn_classifier_gdl.srv import CalculateGraspsService
+
 import choose
 import paths
 from classification_pipelines import *
@@ -9,10 +9,17 @@ import cPickle
 from rospy.numpy_msg import numpy_msg
 from rospy_tutorials.msg import Floats
 
+from uvd_xyz_conversion.srv import UVDTOXYZ
+from pylearn_classifier_gdl.srv import CalculateGraspsService
+from gdl_grasp_msgs.msg import Grasp
+
+import tf
+
 import numpy as np
 import os
 import h5py
 import time
+import pickle
 
 
 def init_save_file(input_data_file, input_model_file):
@@ -46,6 +53,11 @@ class GraspServer:
         self.service = rospy.Service('calculate_grasps_service', CalculateGraspsService, self.service_request_handler)
         self.pipeline = self._init_pipeline()
 
+        self.uvd_to_xyz_proxy = rospy.ServiceProxy('uvd_to_xyz', UVDTOXYZ)
+
+        f = open("mean_grasps.pkl")
+        self.mean_grasps = pickle.load(f)
+
         conv_model_name = choose.choose_from(paths.MODEL_DIR)
         conv_model_filepath = paths.MODEL_DIR + conv_model_name + "/cnn_model.pkl"
 
@@ -69,7 +81,36 @@ class GraspServer:
         self.input_dset["rgbd"][0] = rgbd
         self.pipeline.run()
 
-        return []
+        grasps = self.pipeline._pipeline_stages[-1].grasps
+
+        grasp_msgs = []
+
+        for grasp in grasps:
+            grasp_energy, grasp_type,  palm_index, argmax_u, argmax_v = grasp
+            d = rgbd[argmax_u, argmax_v, 3]
+            x, y, z = self.uvd_to_xyz_proxy(argmax_u, argmax_v, d)
+
+            joint_values = self.mean_grasps.joint_values[grasp_type]
+            wrist_roll = self.mean_grasps.wrist_roll[grasp_type]
+
+            quat = tf.transformations.quaternion_from_euler((0, 0, wrist_roll))
+
+            grasp_msg = Grasp()
+            grasp_msg.pose.position.x = x
+            grasp_msg.pose.position.y = y
+            grasp_msg.pose.position.z = z
+            grasp_msg.pose.orientation.x = quat.x
+            grasp_msg.pose.orientation.y = quat.y
+            grasp_msg.pose.orientation.z = quat.z
+            grasp_msg.pose.orientation.w = quat.w
+
+            grasp_msg.joint_values = joint_values
+            grasp_msg.grasp_enery = grasp_energy
+            grasp_msg.grasp_type = grasp_type
+
+            grasp_msgs.append(grasp_msg)
+
+        return grasp_msgs
 
 
 if __name__ == "__main__":

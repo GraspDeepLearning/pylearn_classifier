@@ -665,8 +665,8 @@ class GetTopNGrasps(ClassificationStage):
             argmax_u,argmax_v = arg_max/y_dim, arg_max%y_dim
 
             grasp_energy = independent_x_priors_image[argmax_u, argmax_v]
-
-            self.grasps.append((grasp_energy, palm_index, argmax_u, argmax_v))
+            grasp_type = i
+            self.grasps.append((grasp_energy, grasp_type, palm_index, argmax_u, argmax_v))
 
         self.grasps.sort(reverse=True)
 

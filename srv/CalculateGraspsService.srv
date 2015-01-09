@@ -2,3 +2,4 @@ float32[] rgbd
 float32[] mask
 ---
 
+gdl_grasp_msgs/Grasp[] grasps
