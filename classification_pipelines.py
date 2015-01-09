@@ -26,7 +26,7 @@ class ClassificationPipeline():
 
     def run(self):
 
-        for index in range(20):#range(self._num_images):
+        for index in range(self._num_images):
 
             print
             print 'starting ' + str(index) + " of " + str(self._num_images)

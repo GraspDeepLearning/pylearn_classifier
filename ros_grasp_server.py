@@ -17,7 +17,7 @@ import time
 
 def init_save_file(input_data_file, input_model_file):
 
-    dataset_filepath = paths.HEATMAPS_DATASET_DIR + input_data_file + '_' + input_model_file + '.h5'
+    dataset_filepath = paths.HEATMAPS_DATASET_DIR + 'temp/' + input_data_file + '_' + input_model_file + '.h5'
 
     if os.path.exists(dataset_filepath):
         os.remove(dataset_filepath)
@@ -29,24 +29,22 @@ def init_save_file(input_data_file, input_model_file):
 
 def init_rgbd_file(dataset_file):
 
-    raw_rgbd_filepath = paths.RAW_TRAINING_DATASET_DIR + dataset_file + '.h5'
+    raw_rgbd_filepath = paths.RAW_TRAINING_DATASET_DIR + "temp/" + dataset_file + '.h5'
 
     if os.path.exists(raw_rgbd_filepath):
         os.remove(raw_rgbd_filepath)
 
     input_dset = h5py.File(raw_rgbd_filepath)
 
-    return input_dset,raw_rgbd_filepath
+    return input_dset, raw_rgbd_filepath
 
 
 class GraspServer:
 
     def __init__(self):
         self.pylearn_model = None
-        self.service = rospy.Service('calculate_grasps_service', CalculateGraspsService, self.service_request_handler)
-        self.pipeline = self._init_pipeline()
 
-        conv_model_name = choose.choose_from(paths.MODEL_DIR)
+        conv_model_name = "processed_just_tobasco_with_wrist_roll_5_layer_170x170_12_11_11_55"
         conv_model_filepath = paths.MODEL_DIR + conv_model_name + "/cnn_model.pkl"
 
         dataset_file = str(int(round(time.time() * 1000)))
@@ -56,8 +54,15 @@ class GraspServer:
         self.input_dset.create_dataset("rgbd", (1, 480, 640, 4))
 
         save_dset, save_filepath = init_save_file(dataset_file, conv_model_name)
+        self.save_dset = save_dset
+        self.save_dset.create_dataset("mask", (480, 640))
 
+        rospy.logout(raw_rgbd_filepath)
+        rospy.logout(save_filepath)
         self.pipeline = BarrettGraspClassificationPipeline(save_filepath, raw_rgbd_filepath, conv_model_filepath, input_key="rgbd")
+        self.pipeline.run()
+
+        self.service = rospy.Service('calculate_grasps_service', CalculateGraspsService, self.service_request_handler)
 
         rospy.spin()
 
@@ -67,9 +72,16 @@ class GraspServer:
         mask = np.array(request.mask).reshape((480, 640))
 
         self.input_dset["rgbd"][0] = rgbd
+        self.save_dset["mask"] = mask
+
         self.pipeline.run()
 
+        out = self.save_dset['independent_x_priors']
+
+
+
         return []
+    
 
 
 if __name__ == "__main__":

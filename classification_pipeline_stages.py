@@ -53,7 +53,11 @@ class CopyInRaw(ClassificationStage):
 
     def init_dataset(self, dataset):
         shape = self.raw_rgbd_dataset[self.in_key].shape
-        chunk_size = (10, shape[1], shape[2], shape[3])
+        if shape[0] < 10:
+            num_samples_per_chunk = shape[0]
+        else:
+            num_samples_per_chunk = 10
+        chunk_size = (num_samples_per_chunk, shape[1], shape[2], shape[3])
         dataset.create_dataset(self.out_key, shape, chunks=chunk_size)
 
     def run(self, dataset, index):
