@@ -674,8 +674,6 @@ class GetTopNGrasps(ClassificationStage):
 
         self.grasps.sort(reverse=True)
 
-        import IPython
-        IPython.embed()
 
 
 
