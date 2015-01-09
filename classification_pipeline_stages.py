@@ -575,9 +575,12 @@ class BarrettMultiplyPriors(ClassificationStage):
             out[current_heatmap_index] = independent_finger_pos_cropped
 
             vc_index_for_heatmap = current_heatmap_index % num_vc
+
+            # import IPython
+            # IPython.embed()
             for j in range(num_vc):
 
-                out *= priors[current_heatmap_index, j, vc_index_for_heatmap]
+                out[current_heatmap_index] *= priors[current_heatmap_index, j, vc_index_for_heatmap]
 
 
         return out
@@ -627,7 +630,48 @@ class MultiplyPriors(ClassificationStage):
                 print 'not done.'
 
 
+class GetTopNGrasps(ClassificationStage):
 
+    def __init__(self, mask=None):
+        self.grasps = []
+        self.mask = mask
+
+        self.out_key = 'top_n_grasps'
+
+    def dataset_inited(self, dataset):
+        return self.out_key in dataset.keys()
+
+    def init_dataset(self, dataset):
+        top_n_grasps = self._run(dataset, 0 )
+
+        shape = (900, 4)
+        dataset.create_dataset(self.out_key, shape)
+
+    def _run(self, dataset, index):
+        independent_x_priors = dataset['independent_x_priors'][index]
+
+        num_heatmaps = independent_x_priors.shape[0]
+        num_grasp_types = num_heatmaps/4
+
+        for i in range(num_grasp_types):
+            palm_index = i*4
+            independent_x_priors_image = independent_x_priors[palm_index]
+
+            if self.mask:
+                independent_x_priors_image = independent_x_priors[palm_index] * self.mask
+
+            arg_max = np.argmax(independent_x_priors_image)
+            y_dim = independent_x_priors_image.shape[-1]
+            argmax_u,argmax_v = arg_max/y_dim, arg_max%y_dim
+
+            grasp_energy = independent_x_priors_image[argmax_u, argmax_v]
+
+            self.grasps.append((grasp_energy, palm_index, argmax_u, argmax_v))
+
+        self.grasps.sort(reverse=True)
+
+        import IPython
+        IPython.embed()
 
 
 
