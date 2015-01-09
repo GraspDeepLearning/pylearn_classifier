@@ -675,6 +675,9 @@ class GetTopNGrasps(ClassificationStage):
         self.grasps.sort(reverse=True)
 
 
+    def run(self, dataset, index):
+        out = self._run(dataset, index)
+
 
 
 
