@@ -1,0 +1,5 @@
+
+#ssh long.cs.columbia.edu
+source /grasp_deep_learning/gdl/devel/setup.bash
+export ROS_MASTER_URI=http://captiva.cs.columbia.edu:11311
+rosrun pylearn_classifier_gdl ros_grasp_server.py
