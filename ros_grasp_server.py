@@ -56,7 +56,7 @@ class GraspServer:
 
         self.uvd_to_xyz_proxy = rospy.ServiceProxy('uvd_to_xyz', UVDTOXYZ)
 
-        f = open("mean_grasps.pkl")
+        f = open("mean_grasp.pkl")
         self.mean_grasps = pickle.load(f)
 
         conv_model_filepath = paths.MODEL_DIR + conv_model_name + "/cnn_model.pkl"
