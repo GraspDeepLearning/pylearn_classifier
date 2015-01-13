@@ -639,6 +639,8 @@ class GetTopNGrasps(ClassificationStage):
     def __init__(self, mask=None):
         self.grasps = []
         self.mask = mask
+        self.x_border = 0
+        self.y_border = 0
 
         self.out_key = 'top_n_grasps'
 
@@ -652,6 +654,7 @@ class GetTopNGrasps(ClassificationStage):
         dataset.create_dataset(self.out_key, shape)
 
     def _run(self, dataset, index):
+        self.grasps = []
         independent_x_priors = dataset['independent_x_priors'][index]
 
         num_heatmaps = independent_x_priors.shape[0]
@@ -661,16 +664,30 @@ class GetTopNGrasps(ClassificationStage):
             palm_index = i*4
             independent_x_priors_image = independent_x_priors[palm_index]
 
-            if self.mask:
+
+            if self.mask is not None:
+                x_dim, y_dim = independent_x_priors[palm_index].shape
+                mask_x_dim , mask_y_dim = self.mask.shape
+
+                if x_dim != mask_x_dim:
+                    self.x_border  = (mask_x_dim-x_dim)/2
+                    self.y_border  = (mask_y_dim-y_dim)/2
+
+                    x_offset = 0
+                    y_offset = 0
+                    if x_dim % 2 ==1:
+                        x_offset = 1
+                    if y_dim % 2 == 1:
+                        y_offset = 1
+                    self.mask = self.mask[self.x_border:-self.x_border-x_offset, self.y_border:-self.y_border-y_offset]
+
                 independent_x_priors_image = independent_x_priors[palm_index] * self.mask
 
-            arg_max = np.argmax(independent_x_priors_image)
-            y_dim = independent_x_priors_image.shape[-1]
-            argmax_u,argmax_v = arg_max/y_dim, arg_max%y_dim
+            argmax_v,argmax_u = np.unravel_index(independent_x_priors_image.argmax(), independent_x_priors_image.shape)
 
-            grasp_energy = independent_x_priors_image[argmax_u, argmax_v]
+            grasp_energy = independent_x_priors_image[argmax_v, argmax_u]
             grasp_type = i
-            self.grasps.append((grasp_energy, grasp_type, palm_index, argmax_u, argmax_v))
+            self.grasps.append((grasp_energy, grasp_type, palm_index, argmax_v+self.x_border, argmax_u+self.y_border))
 
         self.grasps.sort(reverse=True)
 

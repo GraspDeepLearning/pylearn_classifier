@@ -20,11 +20,11 @@ import os
 import h5py
 import time
 import pickle
+import math
 
 from sensor_msgs.msg import JointState
 
 from grasp_priors import GraspPriorsList
-
 
 def init_save_file(input_data_file, input_model_file):
 
@@ -55,7 +55,7 @@ class GraspServer:
     def __init__(self):
         self.pylearn_model = None
 
-        conv_model_name = "processed_just_tobasco_with_wrist_roll_5_layer_170x170_12_11_11_55"
+        conv_model_name = "processed_2.0m_7vc_barrett_18_grasp_types_5_layer_170x170_1_12_12_41"
 
         try:
             rospy.wait_for_service('/uvd_to_xyz', 6)
@@ -88,16 +88,18 @@ class GraspServer:
 
         self.service = rospy.Service('calculate_grasps_service', CalculateGraspsService, self.service_request_handler)
 
-        rospy.spin()
-
     def service_request_handler(self, request):
         rospy.loginfo("received request")
 
         rgbd = np.array(request.rgbd).reshape((480, 640, 4))
         mask = np.array(request.mask).reshape((480, 640))
 
+
+
         self.input_dset["rgbd"][0] = rgbd
         self.save_dset["mask"][:, :] = mask
+
+        self.pipeline._pipeline_stages[-1].mask = mask
 
         self.pipeline.run()
 
@@ -106,8 +108,12 @@ class GraspServer:
         grasp_msgs = CalculateGraspsServiceResponse()
 
         for grasp in grasps:
-            grasp_energy, grasp_type,  palm_index, argmax_u, argmax_v = grasp
-            d = rgbd[argmax_u, argmax_v, 3]
+            grasp_energy, grasp_type,  palm_index, argmax_v, argmax_u = grasp
+            d = rgbd[argmax_v, argmax_u, 3]
+
+            rospy.loginfo("u: " + str(argmax_u))
+            rospy.loginfo("v: " + str(argmax_v))
+            rospy.loginfo("d: " + str(d))
 
             resp = self.uvd_to_xyz_proxy(argmax_u, argmax_v, d)
             x = resp.x
@@ -117,7 +123,8 @@ class GraspServer:
             joint_values = self.grasp_priors_list.get_grasp_prior(grasp_type).joint_values
             wrist_roll = self.grasp_priors_list.get_grasp_prior(grasp_type).wrist_roll
 
-            quat = tf.transformations.quaternion_from_euler(0, 0, wrist_roll)
+            quat = tf.transformations.quaternion_from_euler(0, math.pi/2.0, wrist_roll, axes='szyx')
+            #quat = tf.transformations.quaternion_from_euler(0, 0, 0, axes='szyx')
 
             grasp_msg = Grasp()
             grasp_msg.pose.position.x = x
@@ -127,7 +134,6 @@ class GraspServer:
             grasp_msg.pose.orientation.y = quat[1]
             grasp_msg.pose.orientation.z = quat[2]
             grasp_msg.pose.orientation.w = quat[3]
-
 
             jv = JointState()
             jv.name = ["bhand/finger_1/prox_joint",
@@ -155,3 +161,5 @@ if __name__ == "__main__":
     rospy.init_node('grasp_server_node')
     rospy.loginfo("starting grasp_server_node...")
     grasp_server = GraspServer()
+    rospy.loginfo("Grasp Server Node ready for requests.")
+    rospy.spin()
