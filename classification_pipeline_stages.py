@@ -645,13 +645,10 @@ class GetTopNGrasps(ClassificationStage):
         self.out_key = 'top_n_grasps'
 
     def dataset_inited(self, dataset):
-        return self.out_key in dataset.keys()
+        return True
 
     def init_dataset(self, dataset):
-        top_n_grasps = self._run(dataset, 0 )
-
-        shape = (900, 4)
-        dataset.create_dataset(self.out_key, shape)
+        pass
 
     def _run(self, dataset, index):
         self.grasps = []
@@ -691,12 +688,49 @@ class GetTopNGrasps(ClassificationStage):
 
         self.grasps.sort(reverse=True)
 
+    def run(self, dataset, index):
+        self._run(dataset, index)
+
+
+
+class RefineGrasps(ClassificationStage):
+
+    def __init__(self, grasps):
+        self.out_key = 'refined_grasps'
+
+        self.grasps = grasps
+        self.refined_grasps = []
+
+    def dataset_inited(self, dataset):
+        return True
+
+    def init_dataset(self, dataset):
+        pass
+
+    def _run(self, dataset, index):
+        self.grasps = []
+        independent_x_priors = dataset['independent_x_priors'][index]
+
+        num_heatmaps = independent_x_priors.shape[0]
+        num_grasp_types = num_heatmaps/4
+
+        for i in range(num_grasp_types):
+            # self.grasps.append((grasp_energy, grasp_type, palm_index, argmax_v+self.x_border, argmax_u+self.y_border))
+            grasp = self.grasps[i]
+
+            palm_index = i*4
+            independent_x_priors_palm_image = independent_x_priors[palm_index]
+            independent_x_priors_f1_image = independent_x_priors[palm_index + 1]
+            independent_x_priors_f2_image = independent_x_priors[palm_index + 2]
+            independent_x_priors_f3image = independent_x_priors[palm_index + 3]
+
+
+
+
+
 
     def run(self, dataset, index):
-        out = self._run(dataset, index)
-
-
-
+        self._run(dataset, index)
 
 
 
