@@ -112,7 +112,7 @@ class GraspServer:
             d = rgbd[argmax_v, argmax_u, 3]
 
             rospy.loginfo("u: " + str(argmax_u))
-            rospy.loginfo("v: " + str(argmax_v))
+            rospy.loginfo("v: " + str(argmax_v))    
             rospy.loginfo("d: " + str(d))
 
             resp = self.uvd_to_xyz_proxy(argmax_u, argmax_v, d)
