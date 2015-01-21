@@ -659,7 +659,8 @@ class GetTopNGrasps(ClassificationStage):
 
         for i in range(num_grasp_types):
             palm_index = i*4
-            independent_x_priors_image = independent_x_priors[palm_index]
+            independent_x_priors_image = np.copy(independent_x_priors[palm_index])
+            heatmaps = np.copy(independent_x_priors[palm_index:palm_index+4])
 
 
             if self.mask is not None:
@@ -667,8 +668,8 @@ class GetTopNGrasps(ClassificationStage):
                 mask_x_dim , mask_y_dim = self.mask.shape
 
                 if x_dim != mask_x_dim:
-                    self.x_border  = (mask_x_dim-x_dim)/2
-                    self.y_border  = (mask_y_dim-y_dim)/2
+                    self.x_border = (mask_x_dim-x_dim)/2
+                    self.y_border = (mask_y_dim-y_dim)/2
 
                     x_offset = 0
                     y_offset = 0
@@ -684,7 +685,7 @@ class GetTopNGrasps(ClassificationStage):
 
             grasp_energy = independent_x_priors_image[argmax_v, argmax_u]
             grasp_type = i
-            self.grasps.append((grasp_energy, grasp_type, palm_index, argmax_v+self.x_border, argmax_u+self.y_border))
+            self.grasps.append((grasp_energy, grasp_type, palm_index, argmax_v, argmax_u, self.x_border, self.y_border, heatmaps))
 
         self.grasps.sort(reverse=True)
 
