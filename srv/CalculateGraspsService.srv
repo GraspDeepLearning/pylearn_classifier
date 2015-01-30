@@ -1,5 +1,8 @@
 float32[] rgbd
 float32[] mask
+
 ---
 
+float32[] heatmaps
+int32[] heatmap_dims
 gdl_grasp_msgs/Grasp[] grasps

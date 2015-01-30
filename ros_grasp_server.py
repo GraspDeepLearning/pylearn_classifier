@@ -94,8 +94,6 @@ class GraspServer:
         rgbd = np.array(request.rgbd).reshape((480, 640, 4))
         mask = np.array(request.mask).reshape((480, 640))
 
-
-
         self.input_dset["rgbd"][0] = rgbd
         self.save_dset["mask"][:, :] = mask
 
