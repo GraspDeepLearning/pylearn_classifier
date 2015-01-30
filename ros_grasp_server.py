@@ -168,6 +168,8 @@ class GraspServer:
             grasp_msg.joint_values.position = final_joint_values
             refined_grasp_msgs.grasps.append(grasp_msg)
 
+        refined_grasp_msgs.heatmaps = self.save_dset['independent_x_priors'][0]
+        refined_grasp_msgs.heatmap_dims = self.save_dset['independent_x_priors'][0].shape
         return refined_grasp_msgs
 
 
