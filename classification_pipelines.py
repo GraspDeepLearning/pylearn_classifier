@@ -105,11 +105,11 @@ class BarrettGraspClassificationPipeline(ClassificationPipeline):
                            out_key="rescaled_heatmaps",
                            model_filepath=model_filepath))
 
-        #priors_filepath = paths.PRIORS_DIR + 'just_tobasco_priors.h5'
-        priors_filepath = paths.PRIORS_DIR + '2m_18_grasp_types_barrett.h5'
-        self.add_stage(ConvolveBarrettPriors(priors_filepath))
-        self.add_stage(BarrettMultiplyPriors('convolved_heatmaps', 'independent_x_priors'))
-        self.add_stage(GetTopNGrasps())
+        # #priors_filepath = paths.PRIORS_DIR + 'just_tobasco_priors.h5'
+        # priors_filepath = paths.PRIORS_DIR + '2m_18_grasp_types_barrett.h5'
+        # self.add_stage(ConvolveBarrettPriors(priors_filepath))
+        # self.add_stage(BarrettMultiplyPriors('convolved_heatmaps', 'independent_x_priors'))
+        # self.add_stage(GetTopNGrasps())
 
 
 class ConstrainedGraspClassificationPipeline(ClassificationPipeline):

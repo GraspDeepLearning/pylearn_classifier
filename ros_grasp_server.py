@@ -101,76 +101,81 @@ class GraspServer:
 
         self.pipeline.run()
 
-        grasps = self.pipeline._pipeline_stages[-1].grasps
+        response = CalculateGraspsServiceResponse()
+        response.heatmaps = self.save_dset['rescaled_heatmaps'][0].flatten()
+        response.heatmap_dims = self.save_dset['rescaled_heatmaps'][0].shape
+        return response
 
-        grasp_msgs = CalculateGraspsServiceResponse()
-
-        for grasp in grasps:
-            grasp_energy, grasp_type,  palm_index, argmax_v, argmax_u, x_border, y_border, heatmaps = grasp
-            d = rgbd[argmax_v+x_border, argmax_u+y_border, 3]
-
-            rospy.loginfo("u: " + str(argmax_u))
-            rospy.loginfo("v: " + str(argmax_v))    
-            rospy.loginfo("d: " + str(d))
-
-            resp = self.uvd_to_xyz_proxy(argmax_u+x_border, argmax_v+y_border, d)
-            x = resp.x
-            y = resp.y
-            z = resp.z
-
-            joint_values = self.grasp_priors_list.get_grasp_prior(grasp_type).joint_values
-            wrist_roll = self.grasp_priors_list.get_grasp_prior(grasp_type).wrist_roll
-
-            quat = tf.transformations.quaternion_from_euler(0, math.pi/2.0, wrist_roll, axes='szyx')
-            #quat = tf.transformations.quaternion_from_euler(0, 0,  wrist_roll, axes='szyx')
-
-
-            grasp_msg = Grasp()
-            grasp_msg.pose.position.x = x
-            grasp_msg.pose.position.y = y
-            grasp_msg.pose.position.z = z
-            grasp_msg.pose.orientation.x = quat[0]
-            grasp_msg.pose.orientation.y = quat[1]
-            grasp_msg.pose.orientation.z = quat[2]
-            grasp_msg.pose.orientation.w = quat[3]
-
-            jv = JointState()
-            jv.name = ["bhand/finger_1/prox_joint",
-                       "bhand/finger_1/med_joint",
-                       "bhand/finger_1/dist_joint",
-                       "bhand/finger_2/prox_joint"
-                       "bhand/finger_2/med_joint",
-                       "bhand/finger_2/dist_joint",
-                       "bhand/finger_3/med_joint",
-                       "bhand/finger_3/dist_joint"]
-            jv.position = joint_values
-            grasp_msg.joint_values = jv
-            grasp_msg.grasp_energy = grasp_energy
-
-            grasp_msg.grasp_type = grasp_type
-
-            grasp_msgs.grasps.append(grasp_msg)
-
-        rospy.loginfo("finished")
-
-        refined_grasp_msgs = CalculateGraspsServiceResponse()
-        for i in range(len(grasps)):
-            grasp_energy, grasp_type,  palm_index, argmax_v, argmax_u, x_border, y_border, heatmaps = grasps[i]
-            d = rgbd[argmax_v + x_border, argmax_u + y_border, 3]
-            grasp_msg = grasp_msgs.grasps[i]
-            grasp_refiner = RefineGrasps(grasp_msg=grasp_msg,
-                     palm_uvd=(argmax_u, argmax_v, d),
-                     heatmaps=heatmaps,
-                     x_border=x_border,
-                     y_border=y_border)
-
-            final_joint_values, final_energy = grasp_refiner.run()
-            grasp_msg.joint_values.position = final_joint_values
-            refined_grasp_msgs.grasps.append(grasp_msg)
-
-        refined_grasp_msgs.heatmaps = self.save_dset['independent_x_priors'][0]
-        refined_grasp_msgs.heatmap_dims = self.save_dset['independent_x_priors'][0].shape
-        return refined_grasp_msgs
+        # grasps = self.pipeline._pipeline_stages[-1].grasps
+        #
+        # grasp_msgs = CalculateGraspsServiceResponse()
+        #
+        # for grasp in grasps:
+        #     grasp_energy, grasp_type,  palm_index, argmax_v, argmax_u, x_border, y_border, heatmaps = grasp
+        #     d = rgbd[argmax_v+x_border, argmax_u+y_border, 3]
+        #
+        #     rospy.loginfo("u: " + str(argmax_u))
+        #     rospy.loginfo("v: " + str(argmax_v))
+        #     rospy.loginfo("d: " + str(d))
+        #
+        #     resp = self.uvd_to_xyz_proxy(argmax_u+x_border, argmax_v+y_border, d)
+        #     x = resp.x
+        #     y = resp.y
+        #     z = resp.z
+        #
+        #     joint_values = self.grasp_priors_list.get_grasp_prior(grasp_type).joint_values
+        #     wrist_roll = self.grasp_priors_list.get_grasp_prior(grasp_type).wrist_roll
+        #
+        #     quat = tf.transformations.quaternion_from_euler(0, math.pi/2.0, wrist_roll, axes='szyx')
+        #     #quat = tf.transformations.quaternion_from_euler(0, 0,  wrist_roll, axes='szyx')
+        #
+        #
+        #     grasp_msg = Grasp()
+        #     grasp_msg.pose.position.x = x
+        #     grasp_msg.pose.position.y = y
+        #     grasp_msg.pose.position.z = z
+        #     grasp_msg.pose.orientation.x = quat[0]
+        #     grasp_msg.pose.orientation.y = quat[1]
+        #     grasp_msg.pose.orientation.z = quat[2]
+        #     grasp_msg.pose.orientation.w = quat[3]
+        #
+        #     jv = JointState()
+        #     jv.name = ["bhand/finger_1/prox_joint",
+        #                "bhand/finger_1/med_joint",
+        #                "bhand/finger_1/dist_joint",
+        #                "bhand/finger_2/prox_joint"
+        #                "bhand/finger_2/med_joint",
+        #                "bhand/finger_2/dist_joint",
+        #                "bhand/finger_3/med_joint",
+        #                "bhand/finger_3/dist_joint"]
+        #     jv.position = joint_values
+        #     grasp_msg.joint_values = jv
+        #     grasp_msg.grasp_energy = grasp_energy
+        #
+        #     grasp_msg.grasp_type = grasp_type
+        #
+        #     grasp_msgs.grasps.append(grasp_msg)
+        #
+        # rospy.loginfo("finished")
+        #
+        # refined_grasp_msgs = CalculateGraspsServiceResponse()
+        # for i in range(len(grasps)):
+        #     grasp_energy, grasp_type,  palm_index, argmax_v, argmax_u, x_border, y_border, heatmaps = grasps[i]
+        #     d = rgbd[argmax_v + x_border, argmax_u + y_border, 3]
+        #     grasp_msg = grasp_msgs.grasps[i]
+        #     grasp_refiner = RefineGrasps(grasp_msg=grasp_msg,
+        #              palm_uvd=(argmax_u, argmax_v, d),
+        #              heatmaps=heatmaps,
+        #              x_border=x_border,
+        #              y_border=y_border)
+        #
+        #     final_joint_values, final_energy = grasp_refiner.run()
+        #     grasp_msg.joint_values.position = final_joint_values
+        #     refined_grasp_msgs.grasps.append(grasp_msg)
+        #
+        # refined_grasp_msgs.heatmaps = self.save_dset['independent_x_priors'][0].flatten()
+        # refined_grasp_msgs.heatmap_dims = self.save_dset['independent_x_priors'][0].shape
+        # return refined_grasp_msgs
 
 
 from urdf_parser_py.urdf import URDF
