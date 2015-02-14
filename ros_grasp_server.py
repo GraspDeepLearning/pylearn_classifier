@@ -55,7 +55,7 @@ class GraspServer:
     def __init__(self):
         self.pylearn_model = None
 
-        conv_model_name = "processed_2.0m_7vc_barrett_18_grasp_types_5_layer_170x170_1_12_12_41"
+        self.conv_model_name = "processed_2.0m_7vc_barrett_18_grasp_types_5_layer_170x170_1_12_12_41"
 
         try:
             rospy.wait_for_service('/uvd_to_xyz', 6)
@@ -68,7 +68,7 @@ class GraspServer:
         f = open("grasp_priors_list.pkl")
         self.grasp_priors_list = pickle.load(f)
 
-        conv_model_filepath = paths.MODEL_DIR + conv_model_name + "/cnn_model.pkl"
+        conv_model_filepath = paths.MODEL_DIR + self.conv_model_name + "/cnn_model.pkl"
 
         dataset_file = str(int(round(time.time() * 1000)))
 
@@ -76,7 +76,7 @@ class GraspServer:
         self.input_dset = input_dset
         self.input_dset.create_dataset("rgbd", (1, 480, 640, 4))
 
-        save_dset, save_filepath = init_save_file(dataset_file, conv_model_name)
+        save_dset, save_filepath = init_save_file(dataset_file, self.conv_model_name)
         self.save_dset = save_dset
         self.save_dset.create_dataset("mask", (480, 640))
 
@@ -104,6 +104,7 @@ class GraspServer:
         response = CalculateGraspsServiceResponse()
         response.heatmaps = self.save_dset['rescaled_heatmaps'][0].flatten()
         response.heatmap_dims = self.save_dset['rescaled_heatmaps'][0].shape
+        response.model_name = self.conv_model_name
         return response
 
         # grasps = self.pipeline._pipeline_stages[-1].grasps
