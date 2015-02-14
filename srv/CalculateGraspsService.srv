@@ -5,3 +5,4 @@ float32[] mask
 
 float32[] heatmaps
 int32[] heatmap_dims
+std_msgs/String model_name
