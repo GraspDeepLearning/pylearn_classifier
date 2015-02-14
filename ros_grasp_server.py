@@ -55,7 +55,9 @@ class GraspServer:
     def __init__(self):
         self.pylearn_model = None
 
-        conv_model_name = "processed_2.0m_7vc_barrett_18_grasp_types_5_layer_170x170_1_12_12_41"
+        #conv_model_name = "processed_2.0m_7vc_barrett_18_grasp_types_5_layer_170x170_1_12_12_41"
+        #conv_model_name = "processed_out_condensed_5_layer_170x170_2_6_16_55"
+        conv_model_name = "random_5_layer_170x170_2_6_16_43"
 
         try:
             rospy.wait_for_service('/uvd_to_xyz', 6)
@@ -104,6 +106,7 @@ class GraspServer:
         response = CalculateGraspsServiceResponse()
         response.heatmaps = self.save_dset['rescaled_heatmaps'][0].flatten()
         response.heatmap_dims = self.save_dset['rescaled_heatmaps'][0].shape
+
         return response
 
         # grasps = self.pipeline._pipeline_stages[-1].grasps
