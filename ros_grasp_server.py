@@ -57,7 +57,8 @@ class GraspServer:
 
         #conv_model_name = "processed_2.0m_7vc_barrett_18_grasp_types_5_layer_170x170_1_12_12_41"
         #conv_model_name = "processed_out_condensed_5_layer_170x170_2_6_16_55"
-        conv_model_name = "random_5_layer_170x170_2_6_16_43"
+        #conv_model_name = "random_5_layer_170x170_2_6_16_43"
+        conv_model_name = "processed_sweet_guava_5_layer_72x72_2_13_10_29"
 
         try:
             rospy.wait_for_service('/uvd_to_xyz', 6)
