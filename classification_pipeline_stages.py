@@ -192,27 +192,27 @@ class Classification(ClassificationStage):
         layers = cnn_model.layers[start_classifier_index:]
 
         self.Ws = []
-        #self.bs = []
+        self.bs = []
 
         self.Ws.append(layers[0].get_weights_topo())
-
+        self.bs.append(layers[0].get_biases())
         for i in range(len(layers)):
             if i != 0:
                 layer = layers[i]
                 print type(layer)
                 self.Ws.append(layer.get_weights())
-                #self.bs.append(layer.get_biases())
+                self.bs.append(layer.get_biases())
 
     def _run(self, dataset, index):
 
         X = dataset[self.in_key][index]
 
         W0 = self.Ws[0]
-        out = np.dot(X, W0)[:, :, :, 0, 0]
+        out = np.dot(X, W0)[:, :, :, 0, 0] + self.bs[0]
 
         for i in range(len(self.Ws)):
             if i != 0:
-                out = np.dot(out, self.Ws[i])
+                out = np.dot(out, self.Ws[i]) + self.bs[i]
 
         return out
 
