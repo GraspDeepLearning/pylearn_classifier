@@ -293,7 +293,7 @@ class Rescale(ClassificationStage):
         heatmap_out = np.zeros((x_dim, y_dim, num_channels))
 
         for channel_index in range(num_channels):
-            heatmap_out[:,:,channel_index] = expand(heatmap[:,:,channel_index], scale_factor)
+            heatmap_out[:, :, channel_index] = expand(heatmap[:, :, channel_index], scale_factor)
 
         """
                 heatmap_out = np.zeros(heatmap.shape * scale_factor)
