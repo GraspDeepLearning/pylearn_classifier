@@ -74,7 +74,7 @@
         batch_size: %(batch_size)i,
         learning_rate: 0.1,
         batches_per_iter: 10,
-        monitoring_batch_size: 10,
+        monitoring_batch_size: 20,
         monitoring_batches: 10,
         monitoring_dataset:
             {

@@ -175,7 +175,7 @@ class SplitGraspPatches(preprocessing.Preprocessor):
             label_key = output_key_pair[1]
 
             num_patches = math.floor(self.output_weights[index] * dataset[self.source_keys[0]].shape[0])
-            num_patches = num_patches - (num_patches % 2)
+            num_patches = num_patches - (num_patches % 20)
             patch_shape = dataset[self.source_keys[0]].shape[1:4]
             num_labels = dataset[self.source_keys[1]].shape[-1]
 
