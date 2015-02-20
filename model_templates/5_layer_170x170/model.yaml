@@ -48,7 +48,7 @@
                  },!obj:pylearn2.models.mlp.ConvRectifiedLinear {
                      layer_name: 'h4',
                      output_channels: %(output_channels_h4)i,
-                     irange: .005,
+                     irange: .05,
                      kernel_shape: [3, 3],
                      pool_shape: [2, 2],
                      pool_stride: [2, 2],
@@ -57,17 +57,17 @@
                  !obj:pylearn2.models.mlp.Linear {
                     layer_name: 'y0',
                     dim: 500,
-                    irange: .005,
+                    irange: .05,
                  },
                  !obj:pylearn2.models.mlp.Linear {
                     layer_name: 'y1',
                     dim: 100,
-                    irange: .005,
+                    irange: .05,
                  },
                  !obj:pylearn2.models.mlp.Linear {
                     layer_name: 'y2',
                     dim: %(num_output_channels)i,
-                    irange: .005,
+                    irange: .05,
                  }
                 ],
     },
@@ -95,6 +95,15 @@
                 !obj:pylearn2.costs.cost.MethodCost {
                     method: 'cost_from_X'
                 }, !obj:pylearn2.costs.mlp.L1WeightDecay {
+                        coeffs: [ 0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005,
+                                  0.00000005 ]
+                }, !obj:pylearn2.costs.mlp.WeightDecay {
                         coeffs: [ 0.00000005,
                                   0.00000005,
                                   0.00000005,

@@ -80,10 +80,8 @@ def main():
     for i in range(dataset['rgbd_data'].shape[0]):
         rgbd_img = dataset['rgbd_data'][i]
         heatmaps = dataset['heatmaps'][i]
-        convolved_heatmaps = dataset['convolved_heatmaps'][i]
-        # palm_conv = dataset["p_convolved_heatmaps"][i]
-        # l_conv = dataset["l_convolved_heatmaps"][i]
-        # r_conv = dataset["r_convolved_heatmaps"][i]
+        convolved_priors = dataset['convolved_heatmaps'][i]
+        independent_x_priors = dataset['independent_x_priors'][i]
 
         plotter2 = Plotter(2)
 

@@ -62,12 +62,13 @@ class CopyInRaw(preprocessing.Preprocessor):
             input_key = self.input_keys[index]
             output_key = self.output_keys[index]
             shape = self.source_dataset[input_key].shape
-            dataset.create_dataset(output_key, shape, chunks=tuple([100] + list(shape[1:])))
+            dataset.create_dataset(output_key, shape)
 
             for i in range(shape[0]):
                 if i % 1000 == 0:
                     print str(i) + ' / ' + str(shape[0])
                 dataset[output_key][i] = self.source_dataset[input_key][i]
+
 
 
 class RandomizePatches(preprocessing.Preprocessor):
@@ -166,20 +167,23 @@ class SplitGraspPatches(preprocessing.Preprocessor):
         #     print "skipping split_patches, this has already been run"
         #     return
 
+
+
         for index in range(len(self.output_keys)):
             output_key_pair = self.output_keys[index]
             patch_key = output_key_pair[0]
             label_key = output_key_pair[1]
 
             num_patches = math.floor(self.output_weights[index] * dataset[self.source_keys[0]].shape[0])
-            num_patches = num_patches - (num_patches % 20)
+            num_patches = num_patches - (num_patches % 2)
             patch_shape = dataset[self.source_keys[0]].shape[1:4]
             num_labels = dataset[self.source_keys[1]].shape[-1]
 
             start_range = math.floor(sum(self.output_weights[:index])*dataset[self.source_keys[0]].shape[0])
-
-            dataset.create_dataset(patch_key, (int(num_patches), patch_shape[0], patch_shape[1], patch_shape[2]), chunks=(10, patch_shape[0], patch_shape[1], patch_shape[2]))
-            dataset.create_dataset(label_key, (int(num_patches), num_labels), chunks=(10, num_labels))
+            #import IPython
+            #IPython.embed()
+            dataset.create_dataset(patch_key, (int(num_patches), patch_shape[0], patch_shape[1], patch_shape[2]))
+            dataset.create_dataset(label_key, (int(num_patches), num_labels))
 
             for i in range(int(num_patches)):
 
