@@ -142,6 +142,8 @@ class FeatureExtraction(ClassificationStage):
             weights.append(np.copy(layer.get_weights_topo()))
             biases.append(np.copy(layer.get_biases()))
 
+
+
         cnn_model.set_batch_size(1)
         cnn_model.set_input_space(new_space)
 

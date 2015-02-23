@@ -44,7 +44,11 @@ class GraspServer:
         #conv_model_name = "processed_out_condensed_5_layer_170x170_2_6_16_55"
         #conv_model_name = "random_5_layer_170x170_2_6_16_43"
         #self.conv_model_name = "processed_sweet_guava_5_layer_72x72_2_13_10_29"
-        self.conv_model_name = "processed_man-2_18_16_46_condensed72_5_layer_72x72_small_dset_2_18_17_29"
+
+        #this is just the all bottle
+        #self.conv_model_name = "processed_man-2_18_16_46_condensed72_5_layer_72x72_small_dset_2_18_17_29"
+
+        self.conv_model_name = 'processed_gazebo_contact_and_potential_grasps-2_11_18_20_8_grasp_types72_5_layer_72x72_2_20_17_59'
 
         conv_model_filepath = paths.MODEL_DIR + self.conv_model_name + "/cnn_model.pkl"
 
