@@ -43,7 +43,9 @@ def build_model():
 
     hyper_params_dict = yaml_parse.load(hyper_params_file)
     hyper_params_dict['save_path'] = get_save_path(model_template, dataset_filename)
-    hyper_params_dict['dataset'] = paths.PROCESSED_TRAINING_DATASET_DIR + dataset_filename
+    hyper_params_dict['train_dataset'] = paths.PROCESSED_TRAINING_DATASET_DIR + dataset_filename
+    hyper_params_dict['test_dataset'] = paths.PROCESSED_TRAINING_DATASET_DIR + dataset_filename[:-3] + "_valid.h5"
+    hyper_params_dict['valid_dataset'] = paths.PROCESSED_TRAINING_DATASET_DIR + dataset_filename[:-3] + "_train.h5"
     hyper_params_dict['num_output_channels'] = num_labels
 
     return model_template_yaml, hyper_params_dict
