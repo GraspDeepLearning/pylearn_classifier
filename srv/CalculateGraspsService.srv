@@ -1,7 +1,0 @@
-float32[] rgbd
-
----
-
-float32[] heatmaps
-int32[] heatmap_dims
-string model_name

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(pylearn_classifier_gdl)
+project(pylearn_classifier_train)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -8,7 +8,6 @@ find_package(catkin REQUIRED
   roscpp
   rospy
   std_msgs
-  gdl_grasp_msgs
   geometry_msgs
   sensor_msgs
   message_generation
@@ -55,10 +54,10 @@ find_package(catkin REQUIRED
 # )
 
 ## Generate services in the 'srv' folder
-add_service_files(
-   FILES
-   CalculateGraspsService.srv
- )
+#add_service_files(
+#   FILES
+#   CalculateGraspsService.srv
+# )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -68,11 +67,11 @@ add_service_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   gdl_grasp_msgs
-   std_msgs  # Or other packages containing msgs
- )
+# generate_messages(
+#   DEPENDENCIES
+#   gdl_grasp_msgs
+#   std_msgs  # Or other packages containing msgs
+# )
 
 ###################################
 ## catkin specific configuration ##

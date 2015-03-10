@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>pylearn_classifier_gdl</name>
+  <name>pylearn_classifier_train</name>
   <version>0.0.0</version>
   <description>The grasp_server package</description>
 
